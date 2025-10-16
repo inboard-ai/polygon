@@ -49,6 +49,9 @@ mod request;
 pub mod rest;
 pub mod schema;
 
+#[cfg(feature = "decoder")]
+pub mod query;
+
 // Re-export main types
 pub use error::{Error, Result};
 pub use request::Request;
