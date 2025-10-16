@@ -43,9 +43,9 @@
 
 #![warn(missing_docs)]
 
+mod client;
 mod error;
 mod request;
-mod client;
 pub mod rest;
 
 // Re-export main types
@@ -62,3 +62,14 @@ pub type Polygon = client::Polygon<reqwest::Client>;
 // When reqwest is disabled, re-export the generic Polygon
 #[cfg(not(feature = "reqwest"))]
 pub use client::Polygon;
+
+#[cfg(feature = "decoder")]
+pub mod decoder;
+
+#[cfg(feature = "decoder")]
+pub mod schema {
+    //! Schema for polygon.io API responses
+
+    #[cfg(feature = "decoder")]
+    pub use decoder::*;
+}
