@@ -7,23 +7,16 @@ use polygon::rest::raw::tickers;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Polygon::new()?;
 
-    // Simple - no optional params, just call .get()
-    let json = tickers::related_tickers(&client, "AAPL").get().await?;
+    // Simple - no optional params
+    let json = tickers::related(&client, "AAPL").get().await?;
     println!("Related tickers: {}\n", json);
 
-    // Empty query - no params
-    let json = tickers::all_tickers(&client).get().await?;
-    println!("All tickers (default): {}\n", json);
-
     // Single param
-    let json = tickers::all_tickers(&client)
-        .param("limit", 10)
-        .get()
-        .await?;
+    let json = tickers::all(&client).param("limit", 10).get().await?;
     println!("First 10 tickers: {}\n", json);
 
     // Multiple params - fluent builder pattern
-    let json = tickers::all_tickers(&client)
+    let json = tickers::all(&client)
         .param("ticker", "AAPL")
         .param("active", true)
         .param("limit", 5)
