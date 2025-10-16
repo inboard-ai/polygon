@@ -12,8 +12,17 @@ pub enum Error {
     /// Environment variable error
     #[cfg(feature = "dotenvy")]
     Env(dotenvy::Error),
-    /// Missing API key error
+    /// API key is missing
     MissingApiKey,
+    /// API returned an error response
+    ApiError {
+        /// HTTP status code
+        status: u16,
+        /// Error message from API
+        message: String,
+        /// Request ID if available
+        request_id: Option<String>,
+    },
     /// Custom error message
     Custom(String),
 }
@@ -26,6 +35,17 @@ impl fmt::Display for Error {
             #[cfg(feature = "dotenvy")]
             Error::Env(e) => write!(f, "Environment variable error: {}", e),
             Error::MissingApiKey => write!(f, "Missing API key"),
+            Error::ApiError {
+                status,
+                message,
+                request_id,
+            } => {
+                write!(f, "API error ({}): {}", status, message)?;
+                if let Some(id) = request_id {
+                    write!(f, " [request_id: {}]", id)?;
+                }
+                Ok(())
+            }
             Error::Custom(s) => write!(f, "{}", s),
         }
     }

@@ -4,7 +4,8 @@ use crate::client::Polygon;
 use crate::query::Query;
 use crate::request::Request;
 use crate::rest::raw;
-use crate::schema::ticker::Ticker;
+
+pub use crate::schema::ticker::*;
 
 /// Get a list of all tickers
 pub fn all<'a, Client: Request>(client: &'a Polygon<Client>) -> Query<'a, Client, Vec<Ticker>> {

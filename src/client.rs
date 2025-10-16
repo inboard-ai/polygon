@@ -103,6 +103,18 @@ impl<Client: Request> Polygon<Client> {
 }
 
 // Default implementation
+#[cfg(feature = "reqwest")]
+impl Default for Polygon<reqwest::Client> {
+    fn default() -> Self {
+        Self {
+            client: reqwest::Client::new(),
+            api_key: None,
+        }
+    }
+}
+
+// Default implementation
+#[cfg(not(feature = "reqwest"))]
 impl<Client: Request> Default for Polygon<Client> {
     /// Create a default polygon.io client with no API key set.
     ///

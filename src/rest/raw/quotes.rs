@@ -2,7 +2,7 @@
 
 use crate::client::Polygon;
 use crate::error::{Error, Result};
-use crate::request::Request;
+use crate::request::{Request, Response};
 
 /// Get the last quote for a stock
 ///
@@ -28,7 +28,8 @@ pub async fn get_last_quote<Client: Request>(
         "https://api.polygon.io/v2/last/nbbo/{}?apiKey={}",
         ticker, api_key
     );
-    client.client().get(&url).await
+    let response = client.client().get(&url).await?;
+    Ok(response.body())
 }
 
 /// Get the last forex quote
@@ -57,5 +58,6 @@ pub async fn get_last_forex_quote<Client: Request>(
         "https://api.polygon.io/v1/last_quote/currencies/{}/{}?apiKey={}",
         from, to, api_key
     );
-    client.client().get(&url).await
+    let response = client.client().get(&url).await?;
+    Ok(response.body())
 }

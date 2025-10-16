@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ;
 
     // Get previous day's close for AAPL
-    let result = aggs::previous_close(&client, "AAPL", None).await?;
+    let result = aggs::previous_close(&client, "AAPL").await?;
     println!("{}", result);
 
     Ok(())
