@@ -1,138 +1,71 @@
+<div align="center">
+
 # polygon
 
-Rust async client library for [polygon.io](https://polygon.io) API.
+[![Crates.io](https://img.shields.io/crates/v/polygon.svg)](https://crates.io/crates/polygon)
+[![License](https://img.shields.io/crates/l/polygon.svg)](https://github.com/inboard-ai/polygon/blob/master/LICENSE)
+[![Downloads](https://img.shields.io/crates/d/polygon.svg)](https://crates.io/crates/polygon)
 
-## Features
+A Rust async client library for [polygon.io](https://polygon.io)
 
-- **`reqwest`** (enabled by default): Uses `reqwest` as the default HTTP client with a default type parameter
-- **`dotenvy`** (enabled by default): Enables loading API keys from environment variables via `.env` files
+</div>
 
-## Usage
-
-### With both `reqwest` and `dotenvy` (default)
-
-```rust
-use polygon::{Polygon, rest::quotes};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Loads POLYGON_API_KEY from environment
-    let client = Polygon::new()?;
-    
-    // Call API endpoints using standalone functions
-    let quote = quotes::get_last_quote(&client, "AAPL").await?;
-    println!("{}", quote);
-    
-    Ok(())
-}
-```
-
-### With `reqwest` only (manual API key)
-
-```rust
-use polygon::{Polygon, rest::quotes};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Manually provide API key
-    let client = Polygon::default().with_key("your_api_key");
-    
-    let quote = quotes::get_last_quote(&client, "AAPL").await?;
-    println!("{}", quote);
-    
-    Ok(())
-}
-```
-
-### With custom HTTP client (no `reqwest`)
-
-```rust
-use polygon::{Polygon, Request, rest::quotes};
-
-// Implement the Request trait for your custom client
-struct MyHttpClient;
-
-impl Request for MyHttpClient {
-    fn new() -> Self {
-        MyHttpClient
-    }
-    
-    fn get(&self, url: &str) -> impl Future<Output = Result<String>> + Send {
-        async move {
-            // Your custom HTTP implementation
-            Ok(String::new())
-        }
-    }
-    
-    fn post(&self, url: &str, body: &str) -> impl Future<Output = Result<String>> + Send {
-        async move {
-            // Your custom HTTP implementation
-            Ok(String::new())
-        }
-    }
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let http_client = MyHttpClient::new();
-    
-    // With dotenvy enabled, this loads the API key from env
-    let client = Polygon::with_client(http_client)?;
-    
-    // Or without dotenvy:
-    // let client = Polygon::with_client(http_client).with_key("your_api_key");
-    
-    let quote = quotes::get_last_quote(&client, "AAPL").await?;
-    Ok(())
-}
-```
-
-## API Structure
-
-The library is organized into modules:
-
-- `client`: The main `Polygon` client struct
-- `error`: Error types and `Result` alias
-- `request`: The `Request` trait for HTTP clients
-- `rest`: REST API endpoints
-  - `rest::quotes`: Quote-related functions
-
-## Feature Flags
-
-### Default features
+## Quick Start
 
 ```toml
 [dependencies]
 polygon = "0.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-### Only `reqwest` (no environment variable loading)
+```rust
+use polygon::Polygon;
+use polygon::rest::aggs;
 
-```toml
-[dependencies]
-polygon = { version = "0.1", default-features = false, features = ["reqwest"] }
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = Polygon::new()?;
+    let result = aggs::get_previous_close(&client, "AAPL").await?;
+    println!("{}", result);
+    Ok(())
+}
 ```
 
-### Only `dotenvy` (bring your own HTTP client)
-
-```toml
-[dependencies]
-polygon = { version = "0.1", default-features = false, features = ["dotenvy"] }
+Set your API key via environment variable:
+```bash
+export POLYGON_API_KEY=your_key_here
 ```
 
-### No default features (full customization)
-
-```toml
-[dependencies]
-polygon = { version = "0.1", default-features = false }
+Or use a `.env` file, or set it manually:
+```rust
+let client = Polygon::default().with_key("your_api_key");
 ```
 
-## Environment Variables
+## Available Endpoints
 
-When the `dotenvy` feature is enabled, the library will attempt to load environment variables from a `.env` file in the current directory:
+- `rest::aggs` - Aggregate bars (OHLC data)
+- `rest::quotes` - Real-time and historical quotes
 
-```
-POLYGON_API_KEY=your_api_key_here
+## Custom HTTP Client
+
+Implement the `Request` trait to use your own HTTP client:
+
+```rust
+use polygon::{Request, Polygon};
+
+struct MyClient;
+
+impl Request for MyClient {
+    fn new() -> Self { MyClient }
+    fn get(&self, url: &str) -> impl Future<Output = Result<String>> + Send {
+        async move { /* your implementation */ Ok(String::new()) }
+    }
+    fn post(&self, url: &str, body: &str) -> impl Future<Output = Result<String>> + Send {
+        async move { /* your implementation */ Ok(String::new()) }
+    }
+}
+
+let client = Polygon::with_client(MyClient)?;
 ```
 
 ## License
