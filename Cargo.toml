@@ -1,0 +1,9 @@
+[package]
+name = "polygon"
+version = "0.1.0"
+edition = "2024"
+description = "Rust client library for polygon.io"
+license = "MIT"
+repository = "https://github.com/inboard-ai/polygon"
+
+[dependencies]
