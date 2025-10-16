@@ -1,4 +1,5 @@
 //! REST API endpoints for polygon.io
+pub mod decoded;
+pub mod raw;
 
-pub mod aggs;
-pub mod quotes;
+pub use decoded::*;

@@ -57,5 +57,18 @@ impl From<dotenvy::Error> for Error {
     }
 }
 
+#[cfg(feature = "decoder")]
+impl From<decoder::Error> for Error {
+    fn from(e: decoder::Error) -> Self {
+        Error::Custom(e.to_string())
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(e: serde_json::Error) -> Self {
+        Error::Custom(e.to_string())
+    }
+}
+
 /// Result type for polygon.io API operations
 pub type Result<T> = std::result::Result<T, Error>;

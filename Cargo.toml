@@ -10,18 +10,24 @@ repository = "https://github.com/inboard-ai/polygon"
 reqwest = { version = "0.12", optional = true, features = ["json"] }
 dotenvy = { version = "0.15", optional = true }
 decoder = { version = "0.0.3", optional = true }
+serde_json = { version = "1.0", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 decoder = { version = "0.0.3" }
 dotenvy = { version = "0.15" }
+serde_json = "1.0"
 
 [features]
-default = ["reqwest"]
+default = ["reqwest", "decoder"]
 reqwest = ["dep:reqwest"]
 dotenvy = ["dep:dotenvy"]
-decoder = ["dep:decoder"]
+decoder = ["dep:decoder", "dep:serde_json"]
 
 [[example]]
 name = "basic"
 required-features = ["dotenvy"]
+
+[[example]]
+name = "decoder"
+required-features = ["dotenvy", "decoder"]

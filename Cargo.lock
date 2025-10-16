@@ -698,6 +698,7 @@ dependencies = [
  "decoder",
  "dotenvy",
  "reqwest",
+ "serde_json",
  "tokio",
 ]
 
