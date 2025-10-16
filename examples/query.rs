@@ -13,35 +13,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Single param
     let response = tickers::all(&client).param("limit", 10).get().await?;
-    println!("First 10 tickers (decoded):\n{}\n", output(response));
+    println!(
+        "First 10 tickers (decoded):\n{}\n",
+        response
+            .into_iter()
+            .enumerate()
+            .map(|(i, t)| format!(
+                "{:>2}:  {:>6}  {}",
+                i,
+                t.ticker.unwrap_or_default(),
+                t.name.unwrap_or_default()
+            ))
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
 
     // Multiple params
     let response = tickers::all(&client)
         .params([
             ("exchange", "XNYS"),
             ("limit", "10"),
-            // ("sort", "bad-value"), // uncomment to see an error message.
+            ("sort", "bad-value"), // comment out to avoid error.
         ])
         .get()
         .await?;
 
-    println!("NYSE tickers (decoded):\n{}\n", output(response));
+    println!("NYSE tickers:\n{:?}\n", response);
 
     Ok(())
-}
-
-// Helper function to format response
-fn output(response: Vec<tickers::Ticker>) -> String {
-    response
-        .into_iter()
-        .enumerate()
-        .map(|(i, t)| {
-            format!(
-                "{i:>2}:  {:>6}  {}",
-                t.ticker.unwrap_or_default(),
-                t.name.unwrap_or_default()
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
 }
