@@ -9,7 +9,7 @@ pub use crate::schema::ticker::*;
 
 /// Get a list of all tickers
 pub fn all<'a, Client: Request>(client: &'a Polygon<Client>) -> Query<'a, Client, Vec<Ticker>> {
-    raw::tickers::all(client).with_decoder(decode_all_tickers)
+    raw::tickers::all(client).with_decoder(_all)
 }
 
 /// Get detailed information about a ticker
@@ -17,7 +17,7 @@ pub fn details<'a, Client: Request>(
     client: &'a Polygon<Client>,
     ticker: &str,
 ) -> Query<'a, Client, Ticker> {
-    raw::tickers::details(client, ticker).with_decoder(decode_ticker_details)
+    raw::tickers::details(client, ticker).with_decoder(_details)
 }
 
 /// Get tickers related to a given ticker
@@ -25,22 +25,21 @@ pub fn related<'a, Client: Request>(
     client: &'a Polygon<Client>,
     ticker: &str,
 ) -> Query<'a, Client, Vec<String>> {
-    raw::tickers::related(client, ticker).with_decoder(decode_related_tickers)
+    raw::tickers::related(client, ticker).with_decoder(_tickers)
 }
 
-// Decoder functions
-
-fn decode_all_tickers(value: decoder::Value) -> decoder::Result<Vec<Ticker>> {
+// Internal decoder functions
+fn _all(value: decoder::Value) -> decoder::Result<Vec<Ticker>> {
     let mut response = decoder::decode::map(value)?;
-    response.required("results", decoder::decode::sequence(decode_ticker))
+    response.required("results", decoder::decode::sequence(_ticker))
 }
 
-fn decode_ticker_details(value: decoder::Value) -> decoder::Result<Ticker> {
+fn _details(value: decoder::Value) -> decoder::Result<Ticker> {
     let mut response = decoder::decode::map(value)?;
-    response.required("results", decode_ticker)
+    response.required("results", _ticker)
 }
 
-fn decode_related_tickers(value: decoder::Value) -> decoder::Result<Vec<String>> {
+fn _tickers(value: decoder::Value) -> decoder::Result<Vec<String>> {
     let mut response = decoder::decode::map(value)?;
     response.required(
         "results",
@@ -51,7 +50,7 @@ fn decode_related_tickers(value: decoder::Value) -> decoder::Result<Vec<String>>
     )
 }
 
-fn decode_ticker(value: decoder::Value) -> decoder::Result<Ticker> {
+fn _ticker(value: decoder::Value) -> decoder::Result<Ticker> {
     let mut ticker = decoder::decode::map(value)?;
 
     Ok(Ticker {

@@ -81,7 +81,7 @@ impl<Client: Request> Polygon<Client> {
     ///
     /// # Examples
     ///
-    /// ```ignore
+    /// ```no_run
     /// use polygon::Polygon;
     ///
     /// let client = Polygon::default().with_key("my_api_key");

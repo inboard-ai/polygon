@@ -1,4 +1,37 @@
-//! Query parameter builder using the decoder crate
+//! Query builder API for polygon.io endpoints
+//!
+//! Endpoints return a `Query` builder. Call `.get()` to execute:
+//!
+//! ```no_run
+//! use polygon::Polygon;
+//! use polygon::query::Execute as _;
+//! use polygon::rest::{raw, tickers};
+//!
+//! # #[tokio::main]
+//! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # let client = Polygon::new()?;
+//! // Raw JSON response
+//! let json = raw::tickers::related(&client, "AAPL").get().await?;
+//!
+//! // Decoded into typed structs
+//! let data = tickers::all(&client)
+//!     .param("limit", 10)
+//!     .params([("exchange", "XNYS"), ("sort", "ticker")])
+//!     .get()
+//!     .await?;
+//!
+//! println!("{:?} {:?}", data[0].ticker, data[0].name);
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! # Design
+//!
+//! - Required parameters are function arguments, optional parameters use `.param()` or `.params()`
+//! - `rest::raw::foo` returns JSON strings, `rest::foo` returns decoded types
+//! - Same API for both: construct query, chain parameters, call `.get()`
+//! - `.param()` accepts any type implementing `Param` (integers, strings, bools)
+//! - Errors include HTTP status, message, and request ID
 
 use crate::client::Polygon;
 use crate::error::{Error, Result};

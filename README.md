@@ -58,6 +58,8 @@ let data = tickers::all(&client)
     .params([("exchange", "XNYS"), ("sort", "ticker")])
     .get()
     .await?;
+
+println!("{} {}", data[0].ticker, data[0].name);
 ```
 
 **Design:**

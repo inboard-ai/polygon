@@ -1,45 +1,53 @@
 //! Rust client library for polygon.io
 //!
-//! This library provides an async client for interacting with the polygon.io API.
+//! # Quick Start
 //!
-//! # Features
-//!
-//! - `reqwest` (default): Uses `reqwest` as the HTTP client with a default type parameter
-//! - `dotenvy` (default): Enables loading API keys from environment variables
-//!
-//! # Examples
-//!
-//! With both `reqwest` and `dotenvy` features enabled (default):
-//!
-//! ```ignore
+//! ```no_run
 //! use polygon::Polygon;
+//! use polygon::rest::aggs;
+//! use polygon::query::Execute as _;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let client = Polygon::new()?;
-//!     let quotes = client.quotes();
-//!     let quote = quotes.get_last_quote("AAPL").await?;
+//!     let result = aggs::previous_close(&client, "AAPL").get().await?;
+//!     println!("{:?}", result);
 //!     Ok(())
 //! }
 //! ```
 //!
-//! With only `reqwest` feature enabled:
+//! # Query API
 //!
-//! ```ignore
+//! Endpoints return a `Query` builder. Call `.get()` to execute:
+//!
+//! ```no_run
 //! use polygon::Polygon;
+//! use polygon::query::Execute as _;
+//! use polygon::rest::{raw, tickers};
 //!
-//! let client = Polygon::default().with_key("my_api_key");
+//! # #[tokio::main]
+//! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # let client = Polygon::new()?;
+//! // Raw JSON response
+//! let json = raw::tickers::related(&client, "AAPL").get().await?;
+//!
+//! // Decoded into typed structs
+//! let data = tickers::all(&client)
+//!     .param("limit", 10)
+//!     .params([("exchange", "XNYS"), ("sort", "ticker")])
+//!     .get()
+//!     .await?;
+//!
+//! println!("{:?} {:?}", data[0].ticker, data[0].name);
+//! # Ok(())
+//! # }
 //! ```
 //!
-//! With only `dotenvy` feature enabled (custom HTTP client):
+//! # Features
 //!
-//! ```ignore
-//! use polygon::Polygon;
-//! use polygon::Request as _;
-//!
-//! let http_client = MyHttpClient::new();
-//! let client = Polygon::with_client(http_client)?;
-//! ```
+//! - `reqwest` (default): Uses `reqwest` as the HTTP client
+//! - `dotenvy` (default): Enables loading API keys from environment variables
+//! - `decoder` (default): Enables typed response decoding
 
 #![warn(missing_docs)]
 

@@ -20,11 +20,17 @@ use crate::request::Request;
 ///
 /// # Example
 ///
-/// ```ignore
-/// use polygon::{Polygon, rest::aggs};
+/// ```no_run
+/// use polygon::Polygon;
+/// use polygon::rest::raw::aggs;
+/// use polygon::query::Execute as _;
 ///
+/// # #[tokio::main]
+/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let client = Polygon::new()?;
-/// let data = aggs::aggregates(&client, "AAPL", 1, "day", "2023-01-01", "2023-01-31", None, None, None).await?;
+/// let data = aggs::aggregates(&client, "AAPL", 1, "day", "2023-01-01", "2023-01-31").get().await?;
+/// # Ok(())
+/// # }
 /// ```
 pub fn aggregates<'a, Client: Request>(
     client: &'a Polygon<Client>,
@@ -55,11 +61,17 @@ pub fn aggregates<'a, Client: Request>(
 ///
 /// # Example
 ///
-/// ```ignore
-/// use polygon::{Polygon, rest::aggs};
+/// ```no_run
+/// use polygon::Polygon;
+/// use polygon::rest::raw::aggs;
+/// use polygon::query::Execute as _;
 ///
+/// # #[tokio::main]
+/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let client = Polygon::new()?;
-/// let data = aggs::previous_close(&client, "AAPL").await?;
+/// let data = aggs::previous_close(&client, "AAPL").get().await?;
+/// # Ok(())
+/// # }
 /// ```
 pub fn previous_close<'a, Client: Request>(
     client: &'a Polygon<Client>,
@@ -78,11 +90,17 @@ pub fn previous_close<'a, Client: Request>(
 ///
 /// # Example
 ///
-/// ```ignore
-/// use polygon::{Polygon, rest::aggs};
+/// ```no_run
+/// use polygon::Polygon;
+/// use polygon::rest::raw::aggs;
+/// use polygon::query::Execute as _;
 ///
+/// # #[tokio::main]
+/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let client = Polygon::new()?;
-/// let data = aggs::grouped_daily(&client, "2023-01-09").await?;
+/// let data = aggs::grouped_daily(&client, "2023-01-09").get().await?;
+/// # Ok(())
+/// # }
 /// ```
 pub fn grouped_daily<'a, Client: Request>(
     client: &'a Polygon<Client>,
@@ -106,11 +124,17 @@ pub fn grouped_daily<'a, Client: Request>(
 ///
 /// # Example
 ///
-/// ```ignore
-/// use polygon::{Polygon, rest::aggs};
+/// ```no_run
+/// use polygon::Polygon;
+/// use polygon::rest::raw::aggs;
+/// use polygon::query::Execute as _;
 ///
+/// # #[tokio::main]
+/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let client = Polygon::new()?;
-/// let data = aggs::daily_open_close(&client, "AAPL", "2023-01-09").await?;
+/// let data = aggs::daily_open_close(&client, "AAPL", "2023-01-09").get().await?;
+/// # Ok(())
+/// # }
 /// ```
 pub fn daily_open_close<'a, Client: Request>(
     client: &'a Polygon<Client>,
