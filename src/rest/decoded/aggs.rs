@@ -1,101 +1,49 @@
 //! Decoded aggregate endpoints - returns typed data instead of JSON strings
 
 use crate::client::Polygon;
-use crate::error::Result;
+use crate::query::Query;
 use crate::request::Request;
 use crate::rest::raw;
 use crate::schema::aggs::{Agg, DailyOpenCloseAgg, GroupedDailyAgg, PreviousCloseAgg};
 
 /// Get aggregate bars for a stock over a given date range
-pub async fn aggregates<Client: Request>(
-    client: &Polygon<Client>,
+pub fn aggregates<'a, Client: Request>(
+    client: &'a Polygon<Client>,
     ticker: &str,
     multiplier: u32,
     timespan: &str,
     from: &str,
     to: &str,
-    adjusted: Option<bool>,
-    sort: Option<&str>,
-    limit: Option<u32>,
-) -> Result<Vec<Agg>> {
-    let json = raw::aggs::aggregates(
-        client, ticker, multiplier, timespan, from, to, adjusted, sort, limit,
-    )
-    .await?;
-
-    Ok(decoder::run(
-        serde_json::from_str,
-        |value| {
-            let mut response = decoder::decode::map(value)?;
-            response.required(
-                "results",
-                decoder::decode::sequence(|v| {
-                    let mut agg = decoder::decode::map(v)?;
-                    Ok(Agg {
-                        open: agg.optional("o", decoder::decode::f64)?,
-                        high: agg.optional("h", decoder::decode::f64)?,
-                        low: agg.optional("l", decoder::decode::f64)?,
-                        close: agg.optional("c", decoder::decode::f64)?,
-                        volume: agg.optional("v", decoder::decode::f64)?,
-                        vwap: agg.optional("vw", decoder::decode::f64)?,
-                        timestamp: agg.optional("t", decoder::decode::i64)?,
-                        transactions: agg.optional("n", decoder::decode::i64)?,
-                        otc: agg.optional("otc", decoder::decode::bool)?,
-                    })
-                }),
-            )
-        },
-        &json,
-    )?)
+) -> Query<'a, Client, Vec<Agg>> {
+    raw::aggs::aggregates(client, ticker, multiplier, timespan, from, to)
+        .with_decoder(|v| decode_results(v, decode_agg))
 }
 
 /// Get the previous day's OHLC for a stock
-pub async fn previous_close<Client: Request>(
-    client: &Polygon<Client>,
+pub fn previous_close<'a, Client: Request>(
+    client: &'a Polygon<Client>,
     ticker: &str,
-    adjusted: Option<bool>,
-) -> Result<Vec<PreviousCloseAgg>> {
-    let json = raw::aggs::previous_close(client, ticker, adjusted).await?;
-
-    Ok(decoder::run(
-        serde_json::from_str,
-        |v| decode_results(v, decode_previous_close_agg),
-        &json,
-    )?)
+) -> Query<'a, Client, Vec<PreviousCloseAgg>> {
+    raw::aggs::previous_close(client, ticker)
+        .with_decoder(|v| decode_results(v, decode_previous_close_agg))
 }
 
 /// Get daily OHLC for the entire market
-pub async fn grouped_daily<Client: Request>(
-    client: &Polygon<Client>,
+pub fn grouped_daily<'a, Client: Request>(
+    client: &'a Polygon<Client>,
     date: &str,
-    adjusted: Option<bool>,
-    locale: Option<&str>,
-    market_type: Option<&str>,
-    include_otc: Option<bool>,
-) -> Result<Vec<GroupedDailyAgg>> {
-    let json =
-        raw::aggs::grouped_daily(client, date, adjusted, locale, market_type, include_otc).await?;
-
-    Ok(decoder::run(
-        serde_json::from_str,
-        |v| decode_results(v, decode_grouped_daily_agg),
-        &json,
-    )?)
+) -> Query<'a, Client, Vec<GroupedDailyAgg>> {
+    raw::aggs::grouped_daily(client, date)
+        .with_decoder(|v| decode_results(v, decode_grouped_daily_agg))
 }
 
 /// Get the open/close/afterhours prices of a stock on a specific date
-pub async fn daily_open_close<Client: Request>(
-    client: &Polygon<Client>,
+pub fn daily_open_close<'a, Client: Request>(
+    client: &'a Polygon<Client>,
     ticker: &str,
     date: &str,
-    adjusted: Option<bool>,
-) -> Result<DailyOpenCloseAgg> {
-    let json = raw::aggs::daily_open_close(client, ticker, date, adjusted).await?;
-    Ok(decoder::run(
-        serde_json::from_str,
-        decode_daily_open_close,
-        &json,
-    )?)
+) -> Query<'a, Client, DailyOpenCloseAgg> {
+    raw::aggs::daily_open_close(client, ticker, date).with_decoder(decode_daily_open_close)
 }
 
 /// Generic helper to decode API responses with a "results" array
@@ -105,6 +53,22 @@ fn decode_results<T>(
 ) -> decoder::Result<Vec<T>> {
     let mut response = decoder::decode::map(value)?;
     response.required("results", decoder::decode::sequence(item_decoder))
+}
+
+fn decode_agg(value: decoder::Value) -> decoder::Result<Agg> {
+    let mut agg = decoder::decode::map(value)?;
+
+    Ok(Agg {
+        open: agg.optional("o", decoder::decode::f64)?,
+        high: agg.optional("h", decoder::decode::f64)?,
+        low: agg.optional("l", decoder::decode::f64)?,
+        close: agg.optional("c", decoder::decode::f64)?,
+        volume: agg.optional("v", decoder::decode::f64)?,
+        vwap: agg.optional("vw", decoder::decode::f64)?,
+        timestamp: agg.optional("t", decoder::decode::i64)?,
+        transactions: agg.optional("n", decoder::decode::i64)?,
+        otc: agg.optional("otc", decoder::decode::bool)?,
+    })
 }
 
 fn decode_previous_close_agg(value: decoder::Value) -> decoder::Result<PreviousCloseAgg> {

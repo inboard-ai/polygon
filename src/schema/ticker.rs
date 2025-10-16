@@ -67,6 +67,15 @@ pub struct Ticker {
     pub ticker: Option<String>,
     /// Ticker type
     pub type_: Option<String>,
-    /// Source feed
+    /// Source feed (optional)
     pub source_feed: Option<String>,
 }
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for Ticker {}
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for Vec<Ticker> {}
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for Vec<String> {}

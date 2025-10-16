@@ -81,14 +81,34 @@ impl<T: Param> Param for Option<T> {
 }
 
 /// Query parameter builder with request execution
-pub struct Query<'a, Client: Request> {
+pub struct Query<'a, Client: Request, T = ()> {
     client: &'a Polygon<Client>,
     base_url: String,
     params: Vec<(&'static str, Value)>,
     required: HashSet<&'static str>,
+    allowed: HashSet<&'static str>,
+    #[cfg(feature = "decoder")]
+    decoder: Option<Box<dyn Fn(decoder::Value) -> decoder::Result<T> + 'a>>,
+    #[cfg(not(feature = "decoder"))]
+    _phantom: std::marker::PhantomData<T>,
 }
 
-impl<'a, Client: Request> Query<'a, Client> {
+impl<'a, Client: Request, T> Query<'a, Client, T> {
+    /// Add a parameter to the query
+    pub fn param<V: Param>(mut self, key: &'static str, value: V) -> Self {
+        self.params.push((key, value.encode()));
+        self
+    }
+
+    /// Add multiple parameters to the query
+    pub fn params<V: Param>(mut self, params: impl IntoIterator<Item = (&'static str, V)>) -> Self {
+        self.params
+            .extend(params.into_iter().map(|(k, v)| (k, v.encode())));
+        self
+    }
+}
+
+impl<'a, Client: Request> Query<'a, Client, ()> {
     /// Create a new query builder (internal use)
     pub(crate) fn new(client: &'a Polygon<Client>, base_url: impl Into<String>) -> Self {
         Query {
@@ -96,46 +116,157 @@ impl<'a, Client: Request> Query<'a, Client> {
             base_url: base_url.into(),
             params: Vec::new(),
             required: HashSet::new(),
+            allowed: HashSet::new(),
+            #[cfg(feature = "decoder")]
+            decoder: None,
+            #[cfg(not(feature = "decoder"))]
+            _phantom: std::marker::PhantomData,
         }
     }
 
     /// Mark a parameter as required (internal use)
+    #[allow(dead_code)]
     pub(crate) fn require(mut self, key: &'static str) -> Self {
         self.required.insert(key);
+        self.allowed.insert(key);
         self
     }
 
-    /// Add a parameter to the query
-    pub fn param<V: Param>(mut self, key: &'static str, value: V) -> Self {
-        self.params.push((key, value.encode()));
+    /// Mark a parameter as optional (internal use)
+    pub(crate) fn optional(mut self, key: &'static str) -> Self {
+        self.allowed.insert(key);
         self
     }
 
-    /// Execute the request
-    pub async fn get(mut self) -> Result<String> {
-        // Add API key
-        let api_key = self.client.api_key().ok_or(Error::MissingApiKey)?;
-        self.params.push(("apiKey", encode::string(api_key)));
-
-        // Validate required params
-        let provided: HashSet<_> = self.params.iter().map(|(k, _)| *k).collect();
-        let missing: Vec<_> = self.required.difference(&provided).copied().collect();
-        if !missing.is_empty() {
-            return Err(Error::Custom(format!(
-                "Missing required parameters: {:?}",
-                missing
-            )));
+    #[cfg(feature = "decoder")]
+    /// Set the decoder function for typed responses
+    pub fn with_decoder<U>(
+        self,
+        decoder_fn: impl Fn(decoder::Value) -> decoder::Result<U> + 'a,
+    ) -> Query<'a, Client, U> {
+        Query {
+            client: self.client,
+            base_url: self.base_url,
+            params: self.params,
+            required: self.required,
+            allowed: self.allowed,
+            decoder: Some(Box::new(decoder_fn)),
         }
+    }
 
-        // Build query string
-        let map = encode::map(self.params);
-        let query_string = serde_urlencoded::to_string(&Value::from(map))
-            .map_err(|e| Error::Custom(e.to_string()))?;
+    fn execute_request(mut self) -> impl std::future::Future<Output = Result<String>> {
+        async move {
+            // Add API key
+            let api_key = self.client.api_key().ok_or(Error::MissingApiKey)?;
+            self.params.push(("apiKey", encode::string(api_key)));
 
-        // Execute request
-        let url = format!("{}?{}", self.base_url, query_string);
-        self.client.client().get(&url).await
+            // Validate required params
+            let provided: HashSet<_> = self.params.iter().map(|(k, _)| *k).collect();
+            let missing: Vec<_> = self.required.difference(&provided).copied().collect();
+            if !missing.is_empty() {
+                return Err(Error::Custom(format!(
+                    "Missing required parameters: {:?}",
+                    missing
+                )));
+            }
+
+            // Build query string
+            let map = encode::map(self.params);
+            let query_string = serde_urlencoded::to_string(&Value::from(map))
+                .map_err(|e| Error::Custom(e.to_string()))?;
+
+            // Execute request
+            let url = format!("{}?{}", self.base_url, query_string);
+            self.client.client().get(&url).await
+        }
     }
 }
 
+#[cfg(feature = "decoder")]
+/// Marker trait for types that can be decoded from API responses
+pub trait Decodable {}
 
+/// Trait for executing queries
+pub trait Execute {
+    /// The output type of the query execution
+    type Output;
+
+    /// Execute the query and return the result
+    fn get(self) -> impl std::future::Future<Output = Result<Self::Output>>;
+}
+
+impl<'a, Client: Request> Execute for Query<'a, Client, ()> {
+    type Output = String;
+    fn get(self) -> impl std::future::Future<Output = Result<String>> {
+        self.execute_request()
+    }
+}
+
+#[cfg(feature = "decoder")]
+impl<'a, Client: Request, T: Decodable> Execute for Query<'a, Client, T> {
+    type Output = T;
+    fn get(self) -> impl std::future::Future<Output = Result<T>> {
+        let Query {
+            client,
+            base_url,
+            mut params,
+            required,
+            allowed,
+            decoder,
+        } = self;
+        async move {
+            let decoder = decoder.ok_or_else(|| Error::Custom("No decoder set".to_string()))?;
+
+            let json = execute_request(client, base_url, &mut params, &required, &allowed).await?;
+            Ok(decoder::run(serde_json::from_str, decoder, &json)?)
+        }
+    }
+}
+
+// Helper function for executing requests
+async fn execute_request<'a, Client: Request>(
+    client: &'a Polygon<Client>,
+    base_url: String,
+    params: &mut Vec<(&'static str, Value)>,
+    required: &HashSet<&'static str>,
+    allowed: &HashSet<&'static str>,
+) -> Result<String> {
+    // Add API key
+    let api_key = client.api_key().ok_or(Error::MissingApiKey)?;
+    params.push(("apiKey", encode::string(api_key)));
+
+    // Validate required params
+    let provided: HashSet<_> = params.iter().map(|(k, _)| *k).collect();
+    let missing: Vec<_> = required.difference(&provided).copied().collect();
+    if !missing.is_empty() {
+        return Err(Error::Custom(format!(
+            "Missing required parameters: {:?}",
+            missing
+        )));
+    }
+
+    // Validate allowed params (if any are specified)
+    if !allowed.is_empty() {
+        let invalid: Vec<_> = provided
+            .difference(&allowed)
+            .filter(|k| **k != "apiKey")
+            .copied()
+            .collect();
+        if !invalid.is_empty() {
+            let allowed_list: Vec<_> = allowed.iter().copied().collect();
+            return Err(Error::Custom(format!(
+                "Invalid parameters: {:?}. Allowed: {:?}",
+                invalid, allowed_list
+            )));
+        }
+    }
+
+    // Build query string
+    let map = encode::map(params.clone());
+    let query_string =
+        serde_urlencoded::to_string(&Value::from(map)).map_err(|e| Error::Custom(e.to_string()))?;
+
+    // Execute request
+    let url = format!("{}?{}", base_url, query_string);
+    client.client().get(&url).await
+}

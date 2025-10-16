@@ -1,45 +1,55 @@
 //! Example showing the fluent query API for ticker endpoints
-
 use polygon::Polygon;
-use polygon::rest::raw::tickers;
+use polygon::query::Execute as _;
+use polygon::rest::raw;
+use polygon::rest::tickers;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Polygon::new()?;
 
     // Simple - no optional params
-    let json = tickers::related(&client, "AAPL").get().await?;
-    println!("Related tickers: {}\n", json);
+    let json = raw::tickers::related(&client, "AAPL").get().await?;
+    println!("Related tickers (JSON): {}\n", json);
 
     // Single param
-    let json = tickers::all(&client).param("limit", 10).get().await?;
-    println!("First 10 tickers: {}\n", json);
+    let response = tickers::all(&client).param("limit", 10).get().await?;
+    println!(
+        "First 10 tickers (decoded):\n{}\n",
+        response
+            .into_iter()
+            .enumerate()
+            .map(|(i, t)| format!(
+                "{i:>2}:  {:>6}  {}",
+                t.ticker.unwrap_or_default(),
+                t.name.unwrap_or_default()
+            ))
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
 
-    // Multiple params - fluent builder pattern
-    let json = tickers::all(&client)
-        .param("ticker", "AAPL")
-        .param("active", true)
-        .param("limit", 5)
+    // Multiple params
+    let response = tickers::all(&client)
+        .params([
+            ("exchange", "XNYS".to_string()),
+            ("limit", 10.to_string()),
+            // ("sort", "desc".to_string()),
+        ])
         .get()
         .await?;
-    println!("Filtered tickers: {}\n", json);
-
-    // // Complex query with many params
-    // let json = tickers::all_tickers(&client)
-    //     .param("market", "stocks")
-    //     .param("type", "CS")
-    //     .param("limit", 100)
-    //     .param("sort", "ticker")
-    //     .get()
-    //     .await?;
-    // println!("Common stocks: {}\n", json);
-
-    // // Ticker details with optional date param
-    // let json = tickers::ticker_details(&client, "AAPL")
-    //     .param("date", "2023-01-01")
-    //     .get()
-    //     .await?;
-    // println!("AAPL details on 2023-01-01: {}\n", json);
+    println!(
+        "NYSE tickers (decoded):\n{}\n",
+        response
+            .into_iter()
+            .enumerate()
+            .map(|(i, t)| format!(
+                "{i:>2}:  {:>6}  {}",
+                t.ticker.unwrap_or_default(),
+                t.name.unwrap_or_default()
+            ))
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
 
     Ok(())
 }

@@ -95,3 +95,24 @@ pub struct PreviousCloseAgg {
     /// Volume weighted average price
     pub vwap: Option<f64>,
 }
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for Agg {}
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for Vec<Agg> {}
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for GroupedDailyAgg {}
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for Vec<GroupedDailyAgg> {}
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for DailyOpenCloseAgg {}
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for PreviousCloseAgg {}
+
+#[cfg(feature = "decoder")]
+impl crate::query::Decodable for Vec<PreviousCloseAgg> {}

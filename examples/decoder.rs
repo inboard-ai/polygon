@@ -1,14 +1,14 @@
 //! Example showing typed responses from polygon.io
 
-use polygon::rest::aggs;
 use polygon::Polygon;
+use polygon::rest::aggs;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Polygon::new()?;
 
     // Get typed data directly - no manual decoding needed!
-    let close = aggs::previous_close(&client, "AAPL", None).await?;
+    let close = aggs::previous_close(&client, "AAPL").await?;
 
     println!("Previous close data for AAPL:");
     for agg in close {

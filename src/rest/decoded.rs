@@ -1,3 +1,3 @@
 //! Decoded REST API endpoints for polygon.io
 pub mod aggs;
-pub mod ticker;
+pub mod tickers;
