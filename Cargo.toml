@@ -12,8 +12,13 @@ dotenvy = { version = "0.15", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+dotenvy = { version = "0.15" }
 
 [features]
-default = ["reqwest", "dotenvy"]
+default = ["reqwest"]
 reqwest = ["dep:reqwest"]
 dotenvy = ["dep:dotenvy"]
+
+[[example]]
+name = "basic"
+required-features = ["dotenvy"]
