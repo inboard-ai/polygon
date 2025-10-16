@@ -41,10 +41,36 @@ Or use a `.env` file, or set it manually:
 let client = Polygon::default().with_key("your_api_key");
 ```
 
+## Query API
+
+Endpoints return a `Query` builder. Call `.get()` to execute:
+
+```rust
+use polygon::query::Execute as _;
+use polygon::rest::{raw, tickers};
+
+// Raw JSON response
+let json = raw::tickers::related(&client, "AAPL").get().await?;
+
+// Decoded into typed structs
+let data = tickers::all(&client)
+    .param("limit", 10)
+    .params([("exchange", "XNYS"), ("sort", "ticker")])
+    .get()
+    .await?;
+```
+
+**Design:**
+- Required parameters are function arguments, optional parameters use `.param()` or `.params()`
+- `rest::raw::foo` returns JSON strings, `rest::foo` returns decoded types
+- Same API for both: construct query, chain parameters, call `.get()`
+- `.param()` accepts any type implementing `Param` (integers, strings, bools)
+- Errors include HTTP status, message, and request ID
+
 ## Available Endpoints
 
-- `rest::aggs` - Aggregate bars (OHLC data)
-- `rest::quotes` - Real-time and historical quotes
+- `rest::aggs` - Aggregate bars (OHLC)
+- `rest::tickers` - Ticker reference data
 
 ## Custom HTTP Client
 
