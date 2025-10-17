@@ -9,7 +9,7 @@
 //!
 //! # #[tokio::main]
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # let client = Polygon::new()?;
+//! let client = Polygon::default().with_key("your_api_key");
 //! // Raw JSON response
 //! let json = raw::tickers::related(&client, "AAPL").get().await?;
 //!

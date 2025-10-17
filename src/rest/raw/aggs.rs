@@ -27,7 +27,7 @@ use crate::request::Request;
 ///
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = Polygon::new()?;
+/// let client = Polygon::default().with_key("your_api_key");
 /// let data = aggs::aggregates(&client, "AAPL", 1, "day", "2023-01-01", "2023-01-31").get().await?;
 /// # Ok(())
 /// # }
@@ -68,7 +68,7 @@ pub fn aggregates<'a, Client: Request>(
 ///
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = Polygon::new()?;
+/// let client = Polygon::default().with_key("your_api_key");
 /// let data = aggs::previous_close(&client, "AAPL").get().await?;
 /// # Ok(())
 /// # }
@@ -97,7 +97,7 @@ pub fn previous_close<'a, Client: Request>(
 ///
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = Polygon::new()?;
+/// let client = Polygon::default().with_key("your_api_key");
 /// let data = aggs::grouped_daily(&client, "2023-01-09").get().await?;
 /// # Ok(())
 /// # }
@@ -131,7 +131,7 @@ pub fn grouped_daily<'a, Client: Request>(
 ///
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = Polygon::new()?;
+/// let client = Polygon::default().with_key("your_api_key");
 /// let data = aggs::daily_open_close(&client, "AAPL", "2023-01-09").get().await?;
 /// # Ok(())
 /// # }

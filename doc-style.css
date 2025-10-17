@@ -1,0 +1,154 @@
+/* Polygon.io brand colors for docs.rs */
+
+:root[data-theme="dark"] {
+    /* Polygon.io brand colors */
+    --polygon-bg: oklch(0.21 0.034 264.665);
+    --polygon-active: oklch(0.673 0.182 276.935);
+    --polygon-muted: oklch(0.707 0.022 261.325);
+    --polygon-text: #ffffff;
+
+    --font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+    /* Override rustdoc dark theme variables */
+    --main-background-color: var(--polygon-bg);
+    --main-color: var(--polygon-muted);
+    --sidebar-background-color: var(--polygon-bg);
+    --sidebar-background-color-hover: rgba(255, 255, 255, 0.02);
+    --link-color: var(--polygon-muted);
+    --sidebar-link-color: var(--polygon-muted);
+    --sidebar-current-link-background-color: transparent;
+    --search-input-focused-border-color: var(--polygon-active);
+    --headings-border-bottom-color: var(--polygon-muted);
+
+    --settings-button-border-focus: var(--polygon-active);
+}
+
+#crate-search,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.sidebar,
+.mobile-topbar,
+.search-input,
+.search-results .result-name,
+.item-table dt>a,
+.out-of-band,
+.sub-heading,
+span.since,
+a.src,
+rustdoc-toolbar,
+summary.hideme,
+.scraped-example-list,
+.rustdoc-breadcrumbs,
+ul.all-items {
+    font-family: var(--font-family);
+}
+
+/* Override dark theme background */
+body {
+    background-color: var(--polygon-bg);
+    font-family: var(--font-family)
+}
+
+.sidebar,
+.sidebar-elems,
+nav.sub {
+    background-color: var(--polygon-bg);
+}
+
+/* Main content area */
+.content,
+main {
+    background-color: var(--polygon-bg);
+    color: var(--polygon-muted);
+}
+
+/* Links - muted by default, purple on hover */
+a {
+    color: var(--polygon-muted);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--polygon-active);
+}
+
+
+
+/* Headers - h1-h3 white, rest muted */
+h1,
+h2,
+h3 {
+    color: var(--polygon-text);
+}
+
+h4,
+h5,
+h6 {
+    color: var(--polygon-muted);
+}
+
+/* Sidebar section headers */
+.sidebar .block h3,
+.sidebar-elems .block h3,
+.sidebar .block h3 a,
+.sidebar-elems .block h3 a {
+    color: var(--polygon-text);
+}
+
+/* Sidebar active item - subtle highlight */
+.sidebar .current {
+    background-color: var(--polygon-bg) !important;
+    color: var(--polygon-active);
+}
+
+.sidebar a {
+    color: var(--polygon-muted);
+}
+
+.sidebar-elems a:hover,
+.sidebar a:hover,
+.sidebar .current a {
+    color: var(--polygon-text);
+    background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+:target:not([data-nosnippet]) {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--polygon-active);
+    border-right: 1px solid var(--polygon-active);
+}
+
+/* Search box */
+.search-input {
+    background-color: rgba(255, 255, 255, 0.02);
+    border: none;
+    border-radius: 0;
+    color: var(--polygon-text);
+}
+
+.search-input:focus {
+    border: 1px solid var(--polygon-active);
+}
+
+/* Muted text */
+.since,
+.stability,
+.out-of-band,
+.docblock .warning {
+    color: var(--polygon-muted);
+}
+
+/* Function/type signatures */
+.item-decl {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Top bar */
+.top-doc .docblock,
+.search-container {
+    background-color: var(--polygon-bg);
+}

@@ -9,7 +9,7 @@
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let client = Polygon::new()?;
+//!     let client = Polygon::default().with_key("your_api_key");
 //!     let result = aggs::previous_close(&client, "AAPL").get().await?;
 //!     println!("{:?}", result);
 //!     Ok(())
@@ -27,7 +27,8 @@
 //!
 //! # #[tokio::main]
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # let client = Polygon::new()?;
+//! let client = Polygon::default().with_key("your_api_key");
+//!
 //! // Raw JSON response
 //! let json = raw::tickers::related(&client, "AAPL").get().await?;
 //!
@@ -45,9 +46,16 @@
 //!
 //! # Features
 //!
-//! - `reqwest` (default): Uses `reqwest` as the HTTP client
-//! - `dotenvy` (default): Enables loading API keys from environment variables
-//! - `decoder` (default): Enables typed response decoding
+//! - **`reqwest`** (default) - Uses [`reqwest`](https://docs.rs/reqwest) as the HTTP client.
+//!   Disable this if you want to provide your own HTTP client implementation.
+//!
+//! - **`decoder`** (default) - Enables typed response decoding using the [`decoder`](https://docs.rs/decoder) crate.
+//!   Provides `rest::tickers`, `rest::aggs`, etc. that return strongly-typed Rust structs.
+//!   Raw JSON endpoints in `rest::raw::*` are always available regardless of this feature.
+//!
+//! - **`dotenvy`** - Enables loading API keys from environment variables via [`dotenvy`](https://docs.rs/dotenvy).
+//!   Adds `Polygon::new()` which loads `POLYGON_API_KEY` from `.env` or environment.
+//!   Without this feature, use `Polygon::default().with_key("your_key")` instead.
 
 #![warn(missing_docs)]
 
