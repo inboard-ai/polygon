@@ -3,6 +3,7 @@
 # polygon
 
 [![Crates.io](https://img.shields.io/crates/v/polygon.svg)](https://crates.io/crates/polygon)
+[![Documentation](https://docs.rs/polygon/badge.svg)](https://docs.rs/polygon)
 [![License](https://img.shields.io/crates/l/polygon.svg)](https://github.com/inboard-ai/polygon/blob/master/LICENSE)
 [![Downloads](https://img.shields.io/crates/d/polygon.svg)](https://crates.io/crates/polygon)
 
