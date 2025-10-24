@@ -1,6 +1,6 @@
 /target
 .env
-/api-docs
-/python
+# /api-docs
+# /python
 
 Cargo.lock

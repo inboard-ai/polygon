@@ -144,3 +144,51 @@ pub fn daily_open_close<'a, Client: Request>(
     Query::new(client, format!("https://api.polygon.io/v1/open-close/{}/{}", ticker, date))
         .optional("adjusted")
 }
+
+#[cfg(all(test, feature = "dotenvy"))]
+mod tests {
+    use super::*;
+    use crate::query::Execute as _;
+
+    fn setup() -> Polygon<reqwest::Client> {
+        Polygon::new().expect("Failed to create client. Make sure POLYGON_API_KEY is set in .env file")
+    }
+
+    #[tokio::test]
+    #[ignore] // Run with: cargo test -- --ignored --test-threads=1
+    async fn test_aggregates() {
+        let client = setup();
+        let result = aggregates(&client, "AAPL", 1, "day", "2023-01-01", "2023-01-10")
+            .get()
+            .await;
+        assert!(result.is_ok(), "Failed to fetch aggregates: {:?}", result);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_previous_close() {
+        let client = setup();
+        let result = previous_close(&client, "AAPL").get().await;
+        assert!(result.is_ok(), "Failed to fetch previous close: {:?}", result);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_grouped_daily() {
+        let client = setup();
+        let result = grouped_daily(&client, "2023-01-09").get().await;
+        assert!(result.is_ok(), "Failed to fetch grouped daily: {:?}", result);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_daily_open_close() {
+        let client = setup();
+        let result = daily_open_close(&client, "AAPL", "2023-01-09").get().await;
+        assert!(
+            result.is_ok(),
+            "Failed to fetch daily open/close: {:?}",
+            result
+        );
+    }
+}
