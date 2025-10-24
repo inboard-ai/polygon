@@ -70,7 +70,7 @@ pub mod query;
 
 // Re-export main types
 pub use error::{Error, Result};
-pub use request::Request;
+pub use request::{Request, Response};
 
 /// The main polygon.io API client with the default `reqwest::Client` HTTP client.
 ///
