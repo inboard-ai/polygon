@@ -6,8 +6,8 @@ This document tracks the implementation status of Polygon.io REST API endpoints,
 
 |                 Category                  |  Python  | Rust  |    %    |
 |-------------------------------------------|:--------:|:-----:|:-------:|
-| [Aggregates (Aggs)](#aggregates-aggs)     |    5     |   4   |    80%  |
-| [Tickers](#tickers)                       |    6     |   4   |    67%  |
+| [Aggregates (Aggs)](#aggregates-aggs)     |    5     |   5   |   100%  |
+| [Tickers](#tickers)                       |    6     |   6   |   100%  |
 | [Trades](#trades)                         |    3     |   0   |    0%   |
 | [Quotes](#quotes)                         |    4     |   0   |    0%   |
 | [Ref - Markets](#reference-markets)       |    2     |   0   |    0%   |
@@ -26,7 +26,7 @@ This document tracks the implementation status of Polygon.io REST API endpoints,
 | [Economy](#economy)                       |    2     |   0   |    0%   |
 | [TMX](#tmx)                               |    1     |   0   |    0%   |
 | [vX](#vx)                                 |    2     |   0   |    0%   |
-| **TOTAL**                                 |  **75**  | **8** | **11%** |
+| **TOTAL**                                 |  **75**  | **11** | **15%** |
 
 ---
 
@@ -50,12 +50,12 @@ This document tracks the implementation status of Polygon.io REST API endpoints,
 |--------|----------|-----------|-------|
 | `list_tickers()` | `GET /v3/reference/tickers` | ✓ | `tickers::all()` |
 | `get_ticker_details()` | `GET /v3/reference/tickers/{ticker}` | ✓ | `tickers::details()` |
-| `get_ticker_events()` | `GET /vX/reference/{id}/events` | ✗ | Missing |
-| `list_ticker_news()` | `GET /v2/reference/news` | ✗ | Missing |
+| `get_ticker_events()` | `GET /vX/reference/tickers/{ticker}/events` | ✓ | `tickers::events()` |
+| `list_ticker_news()` | `GET /v2/reference/news` | ✓ | `tickers::news()` |
 | `get_ticker_types()` | `GET /v3/reference/tickers/types` | ✓ | `tickers::types()` |
 | `get_related_companies()` | `GET /v1/related-companies/{ticker}` | ✓ | `tickers::related()` |
 
-**Status:** 4/6 implemented (67%)
+**Status:** 6/6 implemented (100%)
 
 ---
 

@@ -5,6 +5,7 @@ use crate::query::Query;
 use crate::request::Request;
 use crate::rest::raw;
 use crate::schema::aggs::{Agg, DailyOpenCloseAgg, GroupedDailyAgg, PreviousCloseAgg};
+use decoder::decode::{bool, f64, i64, map, sequence, string};
 
 /// Get aggregate bars for a stock over a given date range
 pub fn aggregates<'a, Client: Request>(
@@ -51,72 +52,72 @@ fn decode_results<T>(
     value: decoder::Value,
     item_decoder: impl Fn(decoder::Value) -> decoder::Result<T>,
 ) -> decoder::Result<Vec<T>> {
-    let mut response = decoder::decode::map(value)?;
-    response.required("results", decoder::decode::sequence(item_decoder))
+    let mut response = map(value)?;
+    response.required("results", sequence(item_decoder))
 }
 
 fn decode_agg(value: decoder::Value) -> decoder::Result<Agg> {
-    let mut agg = decoder::decode::map(value)?;
+    let mut agg = map(value)?;
 
     Ok(Agg {
-        open: agg.optional("o", decoder::decode::f64)?,
-        high: agg.optional("h", decoder::decode::f64)?,
-        low: agg.optional("l", decoder::decode::f64)?,
-        close: agg.optional("c", decoder::decode::f64)?,
-        volume: agg.optional("v", decoder::decode::f64)?,
-        vwap: agg.optional("vw", decoder::decode::f64)?,
-        timestamp: agg.optional("t", decoder::decode::i64)?,
-        transactions: agg.optional("n", decoder::decode::i64)?,
-        otc: agg.optional("otc", decoder::decode::bool)?,
+        open: agg.optional("o", f64)?,
+        high: agg.optional("h", f64)?,
+        low: agg.optional("l", f64)?,
+        close: agg.optional("c", f64)?,
+        volume: agg.optional("v", f64)?,
+        vwap: agg.optional("vw", f64)?,
+        timestamp: agg.optional("t", i64)?,
+        transactions: agg.optional("n", i64)?,
+        otc: agg.optional("otc", bool)?,
     })
 }
 
 fn decode_previous_close_agg(value: decoder::Value) -> decoder::Result<PreviousCloseAgg> {
-    let mut prev = decoder::decode::map(value)?;
+    let mut prev = map(value)?;
 
     Ok(PreviousCloseAgg {
-        ticker: prev.optional("T", decoder::decode::string)?,
-        close: prev.optional("c", decoder::decode::f64)?,
-        high: prev.optional("h", decoder::decode::f64)?,
-        low: prev.optional("l", decoder::decode::f64)?,
-        open: prev.optional("o", decoder::decode::f64)?,
-        timestamp: prev.optional("t", decoder::decode::i64)?,
-        volume: prev.optional("v", decoder::decode::f64)?,
-        vwap: prev.optional("vw", decoder::decode::f64)?,
+        ticker: prev.optional("T", string)?,
+        close: prev.optional("c", f64)?,
+        high: prev.optional("h", f64)?,
+        low: prev.optional("l", f64)?,
+        open: prev.optional("o", f64)?,
+        timestamp: prev.optional("t", i64)?,
+        volume: prev.optional("v", f64)?,
+        vwap: prev.optional("vw", f64)?,
     })
 }
 
 fn decode_grouped_daily_agg(value: decoder::Value) -> decoder::Result<GroupedDailyAgg> {
-    let mut grouped = decoder::decode::map(value)?;
+    let mut grouped = map(value)?;
 
     Ok(GroupedDailyAgg {
-        ticker: grouped.optional("T", decoder::decode::string)?,
-        open: grouped.optional("o", decoder::decode::f64)?,
-        high: grouped.optional("h", decoder::decode::f64)?,
-        low: grouped.optional("l", decoder::decode::f64)?,
-        close: grouped.optional("c", decoder::decode::f64)?,
-        volume: grouped.optional("v", decoder::decode::f64)?,
-        vwap: grouped.optional("vw", decoder::decode::f64)?,
-        timestamp: grouped.optional("t", decoder::decode::i64)?,
-        transactions: grouped.optional("n", decoder::decode::i64)?,
-        otc: grouped.optional("otc", decoder::decode::bool)?,
+        ticker: grouped.optional("T", string)?,
+        open: grouped.optional("o", f64)?,
+        high: grouped.optional("h", f64)?,
+        low: grouped.optional("l", f64)?,
+        close: grouped.optional("c", f64)?,
+        volume: grouped.optional("v", f64)?,
+        vwap: grouped.optional("vw", f64)?,
+        timestamp: grouped.optional("t", i64)?,
+        transactions: grouped.optional("n", i64)?,
+        otc: grouped.optional("otc", bool)?,
     })
 }
 
 fn decode_daily_open_close(value: decoder::Value) -> decoder::Result<DailyOpenCloseAgg> {
-    let mut daily = decoder::decode::map(value)?;
+    let mut daily = map(value)?;
 
     Ok(DailyOpenCloseAgg {
-        after_hours: daily.optional("afterHours", decoder::decode::f64)?,
-        close: daily.optional("close", decoder::decode::f64)?,
-        from: daily.optional("from", decoder::decode::string)?,
-        high: daily.optional("high", decoder::decode::f64)?,
-        low: daily.optional("low", decoder::decode::f64)?,
-        open: daily.optional("open", decoder::decode::f64)?,
-        pre_market: daily.optional("preMarket", decoder::decode::f64)?,
-        status: daily.optional("status", decoder::decode::string)?,
-        symbol: daily.optional("symbol", decoder::decode::string)?,
-        volume: daily.optional("volume", decoder::decode::f64)?,
-        otc: daily.optional("otc", decoder::decode::bool)?,
+        after_hours: daily.optional("afterHours", f64)?,
+        close: daily.optional("close", f64)?,
+        from: daily.optional("from", string)?,
+        high: daily.optional("high", f64)?,
+        low: daily.optional("low", f64)?,
+        open: daily.optional("open", f64)?,
+        pre_market: daily.optional("preMarket", f64)?,
+        status: daily.optional("status", string)?,
+        symbol: daily.optional("symbol", string)?,
+        volume: daily.optional("volume", f64)?,
+        otc: daily.optional("otc", bool)?,
     })
 }
