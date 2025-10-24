@@ -21,12 +21,12 @@ This document tracks the implementation status of Polygon.io REST API endpoints,
 | [Benzinga](#benzinga)                     |    9     |   0   |    0%   |
 | [Futures](#futures)                       |    11    |   0   |    0%   |
 | [Indicators](#indicators)                 |    4     |   0   |    0%   |
-| [Financials](#financials)                 |    4     |   0   |    0%   |
+| [Financials](#financials)                 |    4     |   4   |   100%  |
 | [ETF Global](#etf-global)                 |    5     |   0   |    0%   |
 | [Economy](#economy)                       |    2     |   0   |    0%   |
 | [TMX](#tmx)                               |    1     |   0   |    0%   |
 | [vX](#vx)                                 |    2     |   0   |    0%   |
-| **TOTAL**                                 |  **75**  | **11** | **15%** |
+| **TOTAL**                                 |  **75**  | **15** | **20%** |
 
 ---
 
@@ -230,12 +230,12 @@ This document tracks the implementation status of Polygon.io REST API endpoints,
 
 | Method | Endpoint | Rust Impl | Notes |
 |--------|----------|-----------|-------|
-| `list_financials_balance_sheets()` | `GET /vX/reference/financials/balance-sheets` | ✗ | Missing |
-| `list_financials_cash_flow_statements()` | `GET /vX/reference/financials/cash-flow-statements` | ✗ | Missing |
-| `list_financials_income_statements()` | `GET /vX/reference/financials/income-statements` | ✗ | Missing |
-| `list_financials_ratios()` | `GET /vX/reference/financials/ratios` | ✗ | Missing |
+| `list_financials_balance_sheets()` | `GET /stocks/financials/v1/balance-sheets` | ✓ | `financials::balance_sheets()` |
+| `list_financials_cash_flow_statements()` | `GET /stocks/financials/v1/cash-flow-statements` | ✓ | `financials::cash_flow_statements()` |
+| `list_financials_income_statements()` | `GET /stocks/financials/v1/income-statements` | ✓ | `financials::income_statements()` |
+| `list_financials_ratios()` | `GET /stocks/financials/v1/ratios` | ✓ | `financials::ratios()` |
 
-**Status:** 0/4 implemented (0%)
+**Status:** 4/4 implemented (100%)
 
 ---
 

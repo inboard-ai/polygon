@@ -106,3 +106,53 @@ pub fn news<'a, Client: Request>(client: &'a Polygon<Client>) -> Query<'a, Clien
         .optional("sort")
         .optional("order")
 }
+
+#[cfg(all(test, feature = "dotenvy"))]
+mod tests {
+    use super::*;
+    use crate::query::Execute as _;
+
+    fn setup() -> Polygon<reqwest::Client> {
+        Polygon::new().expect("Failed to create client. Make sure POLYGON_API_KEY is set in .env file")
+    }
+
+    #[tokio::test]
+    #[ignore] // Run with: cargo test -- --ignored --test-threads=1
+    async fn test_all_tickers() {
+        let client = setup();
+        let result = all(&client).param("limit", "5").get().await;
+        assert!(result.is_ok(), "Failed to fetch all tickers: {:?}", result);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_ticker_details() {
+        let client = setup();
+        let result = details(&client, "AAPL").get().await;
+        assert!(result.is_ok(), "Failed to fetch ticker details: {:?}", result);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_related_tickers() {
+        let client = setup();
+        let result = related(&client, "AAPL").get().await;
+        assert!(result.is_ok(), "Failed to fetch related tickers: {:?}", result);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_ticker_types() {
+        let client = setup();
+        let result = types(&client).get().await;
+        assert!(result.is_ok(), "Failed to fetch ticker types: {:?}", result);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_ticker_events() {
+        let client = setup();
+        let result = events(&client, "AAPL").get().await;
+        assert!(result.is_ok(), "Failed to fetch ticker events: {:?}", result);
+    }
+}
