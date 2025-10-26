@@ -6,6 +6,7 @@ use crate::request::Request;
 /// When the `reqwest` feature is enabled, this uses `reqwest::Client` as the default HTTP client.
 /// When the `reqwest` feature is disabled, you must provide your own HTTP client that implements [`Request`].
 #[cfg(feature = "reqwest")]
+#[derive(Debug, Clone)]
 pub struct Polygon<Client: Request = reqwest::Client> {
     client: Client,
     api_key: Option<String>,
@@ -16,6 +17,7 @@ pub struct Polygon<Client: Request = reqwest::Client> {
 /// When the `reqwest` feature is enabled, this uses `reqwest::Client` as the default HTTP client.
 /// When the `reqwest` feature is disabled, you must provide your own HTTP client that implements [`Request`].
 #[cfg(not(feature = "reqwest"))]
+#[derive(Debug, Clone)]
 pub struct Polygon<Client: Request> {
     client: Client,
     api_key: Option<String>,

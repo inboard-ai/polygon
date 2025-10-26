@@ -2,18 +2,19 @@
 
 use std::error::Error as StdError;
 use std::fmt;
+use std::sync::Arc;
 
 /// Error type for polygon.io API operations
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Error {
     /// Environment variable error
     VarError(std::env::VarError),
     /// HTTP request error
     #[cfg(feature = "reqwest")]
-    Reqwest(reqwest::Error),
+    Reqwest(Arc<reqwest::Error>),
     /// Environment variable error
     #[cfg(feature = "dotenvy")]
-    Env(dotenvy::Error),
+    Env(Arc<dotenvy::Error>),
     /// API key is missing
     MissingApiKey,
     /// API returned an error response
@@ -58,9 +59,9 @@ impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             #[cfg(feature = "reqwest")]
-            Error::Reqwest(e) => Some(e),
+            Error::Reqwest(e) => Some(e.as_ref()),
             #[cfg(feature = "dotenvy")]
-            Error::Env(e) => Some(e),
+            Error::Env(e) => Some(e.as_ref()),
             _ => None,
         }
     }
@@ -69,14 +70,14 @@ impl StdError for Error {
 #[cfg(feature = "reqwest")]
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
-        Error::Reqwest(e)
+        Error::Reqwest(Arc::new(e))
     }
 }
 
 #[cfg(feature = "dotenvy")]
 impl From<dotenvy::Error> for Error {
     fn from(e: dotenvy::Error) -> Self {
-        Error::Env(e)
+        Error::Env(Arc::new(e))
     }
 }
 
