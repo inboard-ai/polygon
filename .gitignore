@@ -1,5 +1,6 @@
 /target
 .env
+.*.md
 
 Cargo.lock
 
