@@ -6,7 +6,7 @@ use crate::request::Request;
 use crate::request::aggs::{Aggregates, DailyOpenClose, GroupedDaily, PreviousClose};
 use crate::request::common::Timespan;
 use crate::response::aggs::{Agg, DailyOpenCloseAgg, GroupedDailyAgg, PreviousCloseAgg};
-use crate::rest::raw;
+use crate::rest::aggs;
 
 /// Get aggregate bars for a stock over a given date range
 ///
@@ -20,7 +20,7 @@ pub fn aggregates<'a, Client: Request>(
     from: impl Into<String>,
     to: impl Into<String>,
 ) -> Aggregates<'a, Client, Decoder<Vec<Agg>>> {
-    raw::aggs::aggregates(client, ticker, multiplier, timespan, from, to).decoded()
+    aggs::aggregates(client, ticker, multiplier, timespan, from, to).decoded()
 }
 
 /// Get the previous day's OHLC for a stock
@@ -31,7 +31,7 @@ pub fn previous_close<'a, Client: Request>(
     client: &'a Polygon<Client>,
     ticker: impl Into<String>,
 ) -> PreviousClose<'a, Client, Decoder<Vec<PreviousCloseAgg>>> {
-    raw::aggs::previous_close(client, ticker).decoded()
+    aggs::previous_close(client, ticker).decoded()
 }
 
 /// Get daily OHLC for the entire market
@@ -42,7 +42,7 @@ pub fn grouped_daily<'a, Client: Request>(
     client: &'a Polygon<Client>,
     date: impl Into<String>,
 ) -> GroupedDaily<'a, Client, Decoder<Vec<GroupedDailyAgg>>> {
-    raw::aggs::grouped_daily(client, date).decoded()
+    aggs::grouped_daily(client, date).decoded()
 }
 
 /// Get the open/close/afterhours prices of a stock on a specific date
@@ -54,5 +54,5 @@ pub fn daily_open_close<'a, Client: Request>(
     ticker: impl Into<String>,
     date: impl Into<String>,
 ) -> DailyOpenClose<'a, Client, Decoder<DailyOpenCloseAgg>> {
-    raw::aggs::daily_open_close(client, ticker, date).decoded()
+    aggs::daily_open_close(client, ticker, date).decoded()
 }

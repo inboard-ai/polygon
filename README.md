@@ -21,12 +21,12 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 ```rust
 use polygon::Polygon;
-use polygon::rest::raw;
+use polygon::rest::aggs;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Polygon::default().with_key("your_api_key");
-    let json = raw::aggs::previous_close(&client, "AAPL").get().await?;
+    let json = aggs::previous_close(&client, "AAPL").get().await?;
     println!("{}", json);
     Ok(())
 }
@@ -47,15 +47,16 @@ let client = Polygon::new()?; // Loads from POLYGON_API_KEY env var
 Each endpoint returns a request builder. Call `.get()` to execute:
 
 ```rust
-use polygon::rest::{decoded, raw};
+use polygon::rest::tickers;
 
 // Raw JSON response
-let json = raw::tickers::related(&client, "AAPL").get().await?;
+let json = tickers::related(&client, "AAPL").get().await?;
 
 // Decoded into typed structs
-let data = decoded::tickers::all(&client)
+let data = tickers::all(&client)
     .limit(10)
     .exchange("XNYS")
+    .decoded() // decode it into types
     .get()
     .await?;
 
@@ -64,9 +65,9 @@ println!("{:?} {:?}", data[0].ticker, data[0].name);
 
 ### Three Access Modes
 
-**Raw JSON** (`rest::raw::*`) returns raw JSON strings:
+**Raw JSON** (`rest::raw::*`, exported to `rest::*` for convenience) returns raw JSON strings:
 ```rust
-let json = raw::aggs::aggregates(&client, "AAPL", 1, Timespan::Day, "2024-01-01", "2024-01-31")
+let json = rest::aggs::aggregates(&client, "AAPL", 1, Timespan::Day, "2024-01-01", "2024-01-31")
     .adjusted(true)
     .limit(5)
     .get()

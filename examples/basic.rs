@@ -1,6 +1,6 @@
 //! Basic usage example for the polygon.io client
 use polygon::Polygon;
-use polygon::rest::decoded::aggs;
+use polygon::rest::aggs;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

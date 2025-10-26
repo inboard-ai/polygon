@@ -4,18 +4,18 @@ use crate::client::Polygon;
 use crate::processor::Decoder;
 use crate::request::Request;
 use crate::request::tickers::{All, Details, Events, News, Related};
-use crate::rest::raw;
+use crate::rest::tickers;
 
 pub use crate::response::ticker::*;
 
 /// Get a list of all tickers
 pub fn all<'a, Client: Request>(client: &'a Polygon<Client>) -> All<'a, Client, Decoder<Vec<Ticker>>> {
-    raw::tickers::all(client).with_decoder(decode::all)
+    tickers::all(client).with_decoder(decode::all)
 }
 
 /// Get detailed information about a ticker
 pub fn details<'a, Client: Request>(client: &'a Polygon<Client>, ticker: &str) -> Details<'a, Client, Decoder<Ticker>> {
-    raw::tickers::details(client, ticker).with_decoder(decode::details)
+    tickers::details(client, ticker).with_decoder(decode::details)
 }
 
 /// Get tickers related to a given ticker
@@ -23,7 +23,7 @@ pub fn related<'a, Client: Request>(
     client: &'a Polygon<Client>,
     ticker: &str,
 ) -> Related<'a, Client, Decoder<Vec<String>>> {
-    raw::tickers::related(client, ticker).with_decoder(decode::tickers)
+    tickers::related(client, ticker).with_decoder(decode::tickers)
 }
 
 /// Get event history for a ticker at a particular point in time
@@ -31,12 +31,12 @@ pub fn events<'a, Client: Request>(
     client: &'a Polygon<Client>,
     ticker: &str,
 ) -> Events<'a, Client, Decoder<TickerChangeResults>> {
-    raw::tickers::events(client, ticker).with_decoder(decode::events)
+    tickers::events(client, ticker).with_decoder(decode::events)
 }
 
 /// Get the most recent news articles relating to a stock ticker symbol
 pub fn news<'a, Client: Request>(client: &'a Polygon<Client>) -> News<'a, Client, Decoder<Vec<TickerNews>>> {
-    raw::tickers::news(client).with_decoder(decode::news)
+    tickers::news(client).with_decoder(decode::news)
 }
 
 pub mod decode {

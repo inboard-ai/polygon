@@ -4,12 +4,12 @@
 //!
 //! ```no_run
 //! use polygon::Polygon;
-//! use polygon::rest::raw;
+//! use polygon::rest;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let client = Polygon::default().with_key("your_api_key");
-//!     let json = raw::aggs::previous_close(&client, "AAPL").get().await?;
+//!     let json = rest::aggs::previous_close(&client, "AAPL").get().await?;
 //!     println!("{}", json);
 //!     Ok(())
 //! }
@@ -21,19 +21,20 @@
 //!
 //! ```no_run
 //! use polygon::Polygon;
-//! use polygon::rest::{decoded, raw};
+//! use polygon::rest::tickers;
 //!
 //! # #[tokio::main]
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let client = Polygon::default().with_key("your_api_key");
 //!
 //! // Raw JSON response
-//! let json = raw::tickers::related(&client, "AAPL").get().await?;
+//! let json = tickers::related(&client, "AAPL").get().await?;
 //!
 //! // Decoded into typed structs
-//! let data = decoded::tickers::all(&client)
+//! let data = tickers::all(&client)
 //!     .limit(10)
 //!     .exchange("XNYS")
+//!     .decoded()
 //!     .get()
 //!     .await?;
 //!
@@ -49,7 +50,7 @@
 //!
 //! - **`decoder`** (default) - Enables typed response decoding using the [`decoder`](https://docs.rs/decoder) crate.
 //!   Provides `rest::tickers`, `rest::aggs`, etc. that return strongly-typed Rust structs.
-//!   Raw JSON endpoints in `rest::raw::*` are always available regardless of this feature.
+//!   Raw JSON endpoints in `rest::raw::*` (re-exported to `rest::*`) are always available regardless of this feature.
 //!
 //! - **`dotenvy`** - Enables loading API keys from environment variables via [`dotenvy`](https://docs.rs/dotenvy).
 //!   Adds `Polygon::new()` which loads `POLYGON_API_KEY` from `.env` or environment.

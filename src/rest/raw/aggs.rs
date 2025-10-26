@@ -17,7 +17,7 @@ use crate::request::common::Timespan;
 /// # use polygon::execute::Execute;
 /// # async fn example() {
 /// # let client = Client::new("api-key");
-/// let json = polygon::rest::raw::aggs::aggregates(&client, "AAPL", 1, "day", "2023-01-01", "2023-12-31")
+/// let json = polygon::rest::aggs::aggregates(&client, "AAPL", 1, "day", "2023-01-01", "2023-12-31")
 ///     .adjusted(true)
 ///     .get()
 ///     .await

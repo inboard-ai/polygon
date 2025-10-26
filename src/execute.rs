@@ -8,12 +8,12 @@
 //! ```no_run
 //! use polygon::Polygon;
 //! use polygon::execute::Execute as _;
-//! use polygon::rest::raw;
+//! use polygon::rest;
 //!
 //! # #[tokio::main]
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let client = Polygon::default().with_key("your_api_key");
-//! let json = raw::tickers::related(&client, "AAPL").get().await?;
+//! let json = rest::tickers::related(&client, "AAPL").get().await?;
 //! # Ok(())
 //! # }
 //! ```
@@ -31,4 +31,3 @@ pub trait Execute {
     /// Execute the request and return the result
     fn get(self) -> impl std::future::Future<Output = Result<Self::Output>>;
 }
-

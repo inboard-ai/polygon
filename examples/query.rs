@@ -1,18 +1,17 @@
 //! Example showing the endpoint API for ticker and aggregate requests
 use polygon::Polygon;
-use polygon::rest::decoded::{aggs, tickers};
-use polygon::rest::raw;
+use polygon::rest::{self, decoded};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Polygon::new()?;
 
     println!("=== Example 1: Related Tickers (Raw JSON) ===");
-    let json = raw::tickers::related(&client, "AAPL").get().await?;
+    let json = rest::tickers::related(&client, "AAPL").get().await?;
     println!("Related tickers: {json}\n");
 
     println!("=== Example 2: Ticker Events (Decoded) ===");
-    let events = tickers::events(&client, "AAPL").get().await?;
+    let events = decoded::tickers::events(&client, "AAPL").get().await?;
     println!("Events for {}:", events.name);
     println!("  CIK: {}", events.cik);
     println!("  Composite FIGI: {}", events.composite_figi);
@@ -31,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("=== Example 3: Ticker News (Decoded with params) ===");
-    let news = tickers::news(&client).ticker("AAPL").limit("5").get().await?;
+    let news = decoded::tickers::news(&client).ticker("AAPL").limit("5").get().await?;
     println!("Latest news articles: {} total", news.len());
     for (i, article) in news.iter().enumerate() {
         println!("  {}. {}", i + 1, article.title.as_deref().unwrap_or("(no title)"));
@@ -41,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("=== Example 4: Previous Close Aggregate (Decoded) ===");
-    let close = aggs::previous_close(&client, "AAPL").get().await?;
+    let close = decoded::aggs::previous_close(&client, "AAPL").get().await?;
     for agg in close {
         println!("Previous close for {}:", agg.ticker.as_deref().unwrap_or("N/A"));
         println!("  Open: ${:.2}", agg.open.unwrap_or(0.0));
@@ -53,7 +52,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("=== Example 5: List Tickers (with params) ===");
-    let response = tickers::all(&client).limit("10").exchange("XNYS").get().await?;
+    let response = decoded::tickers::all(&client)
+        .limit("10")
+        .exchange("XNYS")
+        .get()
+        .await?;
     println!("First 10 stock tickers:");
     for (i, t) in response.into_iter().enumerate() {
         println!(

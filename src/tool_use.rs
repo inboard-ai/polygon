@@ -368,11 +368,11 @@ fn build_endpoint(module: &str, endpoint: &str, arguments: &Value) -> Result<End
 // ===== Implementation functions  =====
 
 async fn call_tickers<Client: Request>(client: &Polygon<Client>, endpoint: Tickers) -> Result<String> {
-    use crate::rest::raw;
+    use crate::rest;
 
     match endpoint {
         Tickers::All(p) => {
-            let mut q = raw::tickers::all(client);
+            let mut q = rest::tickers::all(client);
             if let Some(t) = p.ticker {
                 q = q.ticker(t);
             }
@@ -397,23 +397,23 @@ async fn call_tickers<Client: Request>(client: &Polygon<Client>, endpoint: Ticke
             q.get().await
         }
         Tickers::Details(p) => {
-            let mut q = raw::tickers::details(client, &p.ticker);
+            let mut q = rest::tickers::details(client, &p.ticker);
             if let Some(d) = p.date {
                 q = q.date(d);
             }
             q.get().await
         }
-        Tickers::Related(p) => raw::tickers::related(client, &p.ticker).get().await,
-        Tickers::Types => raw::tickers::types(client).get().await,
+        Tickers::Related(p) => rest::tickers::related(client, &p.ticker).get().await,
+        Tickers::Types => rest::tickers::types(client).get().await,
         Tickers::Events(p) => {
-            let mut q = raw::tickers::events(client, &p.ticker);
+            let mut q = rest::tickers::events(client, &p.ticker);
             if let Some(t) = p.types {
                 q = q.types(t);
             }
             q.get().await
         }
         Tickers::News(p) => {
-            let mut q = raw::tickers::news(client);
+            let mut q = rest::tickers::news(client);
             if let Some(t) = p.ticker {
                 q = q.ticker(t);
             }
@@ -429,11 +429,11 @@ async fn call_tickers<Client: Request>(client: &Polygon<Client>, endpoint: Ticke
 }
 
 async fn call_aggs<Client: Request>(client: &Polygon<Client>, endpoint: Aggs) -> Result<String> {
-    use crate::rest::raw;
+    use crate::rest;
 
     match endpoint {
         Aggs::Aggregates(p) => {
-            let mut q = raw::aggs::aggregates(client, &p.ticker, p.multiplier, p.timespan, &p.from, &p.to);
+            let mut q = rest::aggs::aggregates(client, &p.ticker, p.multiplier, p.timespan, &p.from, &p.to);
             if let Some(a) = p.adjusted {
                 q = q.adjusted(a);
             }
@@ -446,14 +446,14 @@ async fn call_aggs<Client: Request>(client: &Polygon<Client>, endpoint: Aggs) ->
             q.get().await
         }
         Aggs::PreviousClose(p) => {
-            let mut q = raw::aggs::previous_close(client, &p.ticker);
+            let mut q = rest::aggs::previous_close(client, &p.ticker);
             if let Some(a) = p.adjusted {
                 q = q.adjusted(a);
             }
             q.get().await
         }
         Aggs::GroupedDaily(p) => {
-            let mut q = raw::aggs::grouped_daily(client, &p.date);
+            let mut q = rest::aggs::grouped_daily(client, &p.date);
             if let Some(a) = p.adjusted {
                 q = q.adjusted(a);
             }
@@ -463,7 +463,7 @@ async fn call_aggs<Client: Request>(client: &Polygon<Client>, endpoint: Aggs) ->
             q.get().await
         }
         Aggs::DailyOpenClose(p) => {
-            let mut q = raw::aggs::daily_open_close(client, &p.ticker, &p.date);
+            let mut q = rest::aggs::daily_open_close(client, &p.ticker, &p.date);
             if let Some(a) = p.adjusted {
                 q = q.adjusted(a);
             }
@@ -473,23 +473,23 @@ async fn call_aggs<Client: Request>(client: &Polygon<Client>, endpoint: Aggs) ->
 }
 
 async fn call_financials<Client: Request>(client: &Polygon<Client>, endpoint: Financials) -> Result<String> {
-    use crate::rest::raw;
+    use crate::rest::financials;
 
     match endpoint {
         Financials::BalanceSheets(p) => {
-            let q = raw::financials::balance_sheets(client);
+            let q = financials::balance_sheets(client);
             apply_financial_params(q, p).get().await
         }
         Financials::CashFlowStatements(p) => {
-            let q = raw::financials::cash_flow_statements(client);
+            let q = financials::cash_flow_statements(client);
             apply_financial_params(q, p).get().await
         }
         Financials::IncomeStatements(p) => {
-            let q = raw::financials::income_statements(client);
+            let q = financials::income_statements(client);
             apply_financial_params(q, p).get().await
         }
         Financials::Ratios(p) => {
-            let q = raw::financials::ratios(client);
+            let q = financials::ratios(client);
             apply_financial_params(q, p).get().await
         }
     }

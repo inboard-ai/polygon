@@ -44,7 +44,7 @@ pub fn types<'a, Client: Request>(client: &'a Polygon<Client>) -> Types<'a, Clie
 ///
 /// ```no_run
 /// use polygon::Polygon;
-/// use polygon::rest::raw::tickers;
+/// use polygon::rest::tickers;
 /// use polygon::execute::Execute as _;
 ///
 /// # #[tokio::main]
@@ -67,7 +67,7 @@ pub fn events<'a, Client: Request>(client: &'a Polygon<Client>, ticker: &str) ->
 ///
 /// ```no_run
 /// use polygon::Polygon;
-/// use polygon::rest::raw::tickers;
+/// use polygon::rest::tickers;
 /// use polygon::execute::Execute as _;
 ///
 /// # #[tokio::main]

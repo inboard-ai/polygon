@@ -5,7 +5,7 @@ use crate::processor::Decoder;
 use crate::request::Request;
 use crate::request::financials::Financials;
 use crate::response::financials::*;
-use crate::rest::raw;
+use crate::rest::financials;
 
 /// Get balance sheet data for public companies (decoded)
 ///
@@ -14,7 +14,7 @@ use crate::rest::raw;
 pub fn balance_sheets<'a, Client: Request>(
     client: &'a Polygon<Client>,
 ) -> Financials<'a, Client, Decoder<Vec<BalanceSheet>>> {
-    raw::financials::balance_sheets(client).decoded()
+    financials::balance_sheets(client).decoded()
 }
 
 /// Get cash flow statement data for public companies (decoded)
@@ -24,7 +24,7 @@ pub fn balance_sheets<'a, Client: Request>(
 pub fn cash_flow_statements<'a, Client: Request>(
     client: &'a Polygon<Client>,
 ) -> Financials<'a, Client, Decoder<Vec<CashFlowStatement>>> {
-    raw::financials::cash_flow_statements(client).decoded()
+    financials::cash_flow_statements(client).decoded()
 }
 
 /// Get income statement data for public companies (decoded)
@@ -34,7 +34,7 @@ pub fn cash_flow_statements<'a, Client: Request>(
 pub fn income_statements<'a, Client: Request>(
     client: &'a Polygon<Client>,
 ) -> Financials<'a, Client, Decoder<Vec<IncomeStatement>>> {
-    raw::financials::income_statements(client).decoded()
+    financials::income_statements(client).decoded()
 }
 
 /// Get financial ratios data for public companies (decoded)
@@ -44,5 +44,5 @@ pub fn income_statements<'a, Client: Request>(
 pub fn ratios<'a, Client: Request>(
     client: &'a Polygon<Client>,
 ) -> Financials<'a, Client, Decoder<Vec<FinancialRatio>>> {
-    raw::financials::ratios(client).decoded()
+    financials::ratios(client).decoded()
 }
