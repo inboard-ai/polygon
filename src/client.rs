@@ -44,37 +44,25 @@ impl<Client: Request> Polygon<Client> {
             api_key: Some(api_key),
         })
     }
-    /// Create a new polygon.io client with a custom HTTP client.
-    ///
-    /// This method is available regardless of which features are enabled.
-    /// When the `dotenvy` feature is enabled, it will attempt to load the API key
-    /// from the `POLYGON_API_KEY` environment variable.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the `dotenvy` feature is enabled and the API key cannot be loaded.
-    #[cfg(feature = "dotenvy")]
-    pub fn with_client(client: Client) -> crate::Result<Self> {
-        dotenvy::dotenv().ok(); // Try to load .env file, ignore errors
 
-        let api_key = std::env::var("POLYGON_API_KEY").map_err(|_| crate::Error::MissingApiKey)?;
-
-        Ok(Self {
-            client,
-            api_key: Some(api_key),
-        })
-    }
-
-    /// Create a new polygon.io client with a custom HTTP client.
-    ///
-    /// This method is available when the `dotenvy` feature is disabled.
-    /// You must manually set the API key using [`with_key`](Self::with_key).
     #[cfg(not(feature = "dotenvy"))]
-    pub fn with_client(client: Client) -> Self {
-        Self { client, api_key: None }
+    /// Create a new polygon.io client with the default HTTP client.
+    ///
+    /// You must manually set the API key using [`with_key`](Self::with_key).
+    pub fn new() -> Self {
+        Self {
+            client: Client::new(),
+            api_key: None,
+        }
     }
 
-    /// Set the API key for this client.
+    /// Sets the HTTP client for this instance.
+    pub fn with_client(mut self, client: Client) -> Self {
+        self.client = client;
+        self
+    }
+
+    /// Set the API key for this instance.
     ///
     /// # Examples
     ///
@@ -88,7 +76,7 @@ impl<Client: Request> Polygon<Client> {
         self
     }
 
-    /// Get the API key for this client.
+    /// Get the API key for this instance.
     pub fn api_key(&self) -> Option<&str> {
         self.api_key.as_deref()
     }
