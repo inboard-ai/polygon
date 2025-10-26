@@ -118,6 +118,9 @@ pub mod execute;
 pub mod processor;
 pub mod tool_use;
 
+use std::sync::Arc;
+use std::sync::LazyLock;
+
 pub use error::{Error, Result};
 pub use request::Request;
 pub use response::Response;
@@ -132,3 +135,16 @@ pub type Polygon = client::Polygon<reqwest::Client>;
 // When reqwest is disabled, re-export the generic Polygon
 #[cfg(not(feature = "reqwest"))]
 pub use client::Polygon;
+
+static STATIC_INSTANCE: LazyLock<arc_swap::ArcSwap<Polygon>> =
+    LazyLock::new(|| arc_swap::ArcSwap::from_pointee(Polygon::default()));
+
+/// Initialize a static polygon instance.
+pub fn initialize(polygon: Polygon) -> Arc<Polygon> {
+    STATIC_INSTANCE.swap(Arc::from(polygon))
+}
+
+/// Get the static polygon instance.
+pub fn instance() -> Arc<Polygon> {
+    STATIC_INSTANCE.load().clone()
+}
