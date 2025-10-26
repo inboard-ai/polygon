@@ -1,6 +1,6 @@
 [package]
 name = "polygon"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "Rust client library for polygon.io"
 license = "MIT"
@@ -14,8 +14,11 @@ rustdoc-args = ["--cfg", "docsrs", "--extend-css", "doc-style.css"]
 reqwest = { version = "0.12", optional = true, features = ["json"] }
 dotenvy = { version = "0.15", optional = true }
 decoder = { version = "0.0.3", optional = true }
+serde = { version = "1.0", optional = true, features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
 serde_urlencoded = { version = "0.7", optional = true }
+polars = { version = "0.44", optional = true, features = ["json", "lazy"] }
+schemars = { version = "0.8", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
@@ -27,7 +30,14 @@ serde_json = "1.0"
 default = ["reqwest", "decoder"]
 reqwest = ["dep:reqwest"]
 dotenvy = ["dep:dotenvy"]
-decoder = ["dep:decoder", "dep:serde_json", "dep:serde_urlencoded"]
+decoder = [
+    "dep:decoder",
+    "dep:serde",
+    "dep:serde_json",
+    "dep:schemars",
+    "dep:serde_urlencoded",
+]
+table = ["dep:polars", "dep:serde", "dep:serde_json", "dep:schemars"]
 
 [[example]]
 name = "basic"
@@ -40,3 +50,15 @@ required-features = ["dotenvy", "decoder"]
 [[example]]
 name = "query"
 required-features = ["dotenvy", "decoder"]
+
+[[example]]
+name = "table"
+required-features = ["dotenvy", "table"]
+
+[[example]]
+name = "llm_exploration"
+required-features = ["dotenvy", "table"]
+
+[[example]]
+name = "typed_query"
+required-features = ["dotenvy", "table"]

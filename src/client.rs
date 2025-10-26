@@ -1,6 +1,4 @@
 //! Main polygon.io API client
-#[cfg(feature = "dotenvy")]
-use crate::error::{Error, Result};
 use crate::request::Request;
 
 /// The main polygon.io API client.
@@ -34,10 +32,10 @@ impl<Client: Request> Polygon<Client> {
     ///
     /// Returns an error if the environment variable cannot be loaded or if the API key is missing.
     #[cfg(feature = "dotenvy")]
-    pub fn new() -> Result<Self> {
+    pub fn new() -> crate::Result<Self> {
         dotenvy::dotenv().ok(); // Try to load .env file, ignore errors
 
-        let api_key = std::env::var("POLYGON_API_KEY").map_err(|_| Error::MissingApiKey)?;
+        let api_key = std::env::var("POLYGON_API_KEY").map_err(|_| crate::Error::MissingApiKey)?;
 
         Ok(Self {
             client: Client::new(),
@@ -54,10 +52,10 @@ impl<Client: Request> Polygon<Client> {
     ///
     /// Returns an error if the `dotenvy` feature is enabled and the API key cannot be loaded.
     #[cfg(feature = "dotenvy")]
-    pub fn with_client(client: Client) -> Result<Self> {
+    pub fn with_client(client: Client) -> crate::Result<Self> {
         dotenvy::dotenv().ok(); // Try to load .env file, ignore errors
 
-        let api_key = std::env::var("POLYGON_API_KEY").map_err(|_| Error::MissingApiKey)?;
+        let api_key = std::env::var("POLYGON_API_KEY").map_err(|_| crate::Error::MissingApiKey)?;
 
         Ok(Self {
             client,
@@ -71,10 +69,7 @@ impl<Client: Request> Polygon<Client> {
     /// You must manually set the API key using [`with_key`](Self::with_key).
     #[cfg(not(feature = "dotenvy"))]
     pub fn with_client(client: Client) -> Self {
-        Self {
-            client,
-            api_key: None,
-        }
+        Self { client, api_key: None }
     }
 
     /// Set the API key for this client.

@@ -285,6 +285,295 @@ This document tracks the implementation status of Polygon.io REST API endpoints,
 
 ---
 
+## Type-Safe Tool Use Architecture (feat/tool-use branch)
+
+**Goal:** Create a fully type-safe interface for LLM consumption that eliminates runtime-only validation and enforces correctness at compile time.
+
+### Design Philosophy
+
+**Current Problem:**
+- Manual endpoint registries (brittle, easy to get out of sync)
+- Runtime-only validation via `Query` type
+- String-based endpoint names with no compile-time checking
+- Separate parameter definitions from response types
+
+**Solution:**
+- **Request types** define what you send (parameters)
+- **Response types** define what you get back (results)
+- **Endpoint enum** connects Request → Response with type safety
+- **Automatic schema generation** via serde + schemars (no manual JSON)
+- **No manual registries** - types are the source of truth
+
+### Architecture
+
+```
+src/
+├── request.rs           # Request parameter types + HTTP trait
+│   ├── (inline modules or separate files)
+│   ├── aggs             # Aggregates, PreviousClose, etc.
+│   ├── tickers          # All, Details, Related, etc.
+│   └── financials       # FinancialsParams
+│
+├── response.rs          # Response types (renamed from schema.rs)
+│   ├── aggs             # Agg, GroupedDailyAgg, etc.
+│   ├── tickers          # TickerDetails, CompanyAddress, etc.
+│   └── financials       # BalanceSheet, IncomeStatement, etc.
+│
+└── endpoint.rs          # Type-safe Request → Response mapping
+```
+
+### Type-Safe Endpoint Design
+
+```rust
+// Nested enum structure mirrors API hierarchy
+pub enum Endpoint {
+    Tickers(Tickers),
+    Aggs(Aggs),
+    Financials(Financials),
+}
+
+pub enum Aggs {
+    Aggregates(request::aggs::Aggregates),      // → Vec<response::aggs::Agg>
+    PreviousClose(request::aggs::PreviousClose), // → response::aggs::Agg
+    GroupedDaily(request::aggs::GroupedDaily),   // → Vec<response::aggs::GroupedDailyAgg>
+    DailyOpenClose(request::aggs::DailyOpenClose), // → response::aggs::DailyOpenCloseAgg
+}
+
+// Request types define parameters
+mod request::aggs {
+    pub struct Aggregates {
+        pub ticker: String,
+        pub multiplier: u32,
+        pub timespan: Timespan,
+        pub from: String,
+        pub to: String,
+        pub adjusted: Option<bool>,
+        // ...
+    }
+}
+
+// Response types already exist in schema/
+mod response::aggs {
+    pub struct Agg {
+        pub open: Option<f64>,
+        pub high: Option<f64>,
+        // ...
+    }
+}
+```
+
+### JSON Schema Generation
+
+**Automatic** via `schemars` derive macro:
+
+```rust
+use schemars::JsonSchema;
+
+#[derive(Serialize, Deserialize, JsonSchema)]
+pub struct Aggregates { ... }
+
+// Get JSON Schema for LLM
+let schema = schema_for!(Endpoint);
+```
+
+**No manual conversion needed!** Types define:
+- Parameter names and types
+- Required vs optional fields
+- Enum variants for restricted values
+- Documentation from doc comments
+
+### LLM Interface
+
+**For LLM consumption:**
+
+```rust
+// 1. Get JSON Schema (automatic from types)
+let schema = tool_use::get_schema();
+// → Full JSON Schema describing all endpoints
+
+// 2. LLM sends JSON request
+let json = json!({
+    "Aggs": {
+        "endpoint": "aggregates",
+        "params": {
+            "ticker": "AAPL",
+            "multiplier": 1,
+            "timespan": "day",
+            "from": "2024-01-01",
+            "to": "2024-01-31"
+        }
+    }
+});
+
+// 3. Deserialize + execute (type-safe!)
+let result = tool_use::call(&client, json).await?;
+// → Returns JSON array (from DataFrame)
+```
+
+### Next: Replace Query with Type-Safe Execution
+
+**Current Problem:**
+```rust
+// Generic Query builder - no type safety
+let query = table::financials::balance_sheets(client);
+query.param("ticker", "AAPL")  // ❌ String-based, runtime only
+     .param("limitt", 10)       // ❌ Typo not caught!
+     .get().await?;
+```
+
+**Solution: Query Becomes a Trait**
+```rust
+// Query is now a trait, not a concrete type
+pub trait Query {
+    type Output;  // What this query returns (DataFrame, etc.)
+    
+    async fn get<C: Request>(self, client: &Polygon<C>) -> Result<Self::Output>;
+}
+
+// Request types implement Query
+impl request::financials::Financials {
+    // Builder methods
+    pub fn ticker(mut self, ticker: impl Into<String>) -> Self {
+        self.ticker = Some(ticker.into());
+        self
+    }
+    
+    pub fn limit(mut self, limit: impl Into<Limit>) -> Self { 
+        self.limit = limit.into().into(); // Option<u32>
+        self
+    }
+}
+
+// Different execute for each financials endpoint
+impl Query for (request::financials::Financials, FinancialsEndpoint) {
+    type Output = DataFrame;
+    
+    async fn get<C: Request>(self, client: &Polygon<C>) -> Result<DataFrame> {
+        let (params, endpoint) = self;
+        // Build URL based on endpoint, add params, execute
+    }
+}
+
+// Usage:
+let df = request::financials::Financials::default()
+    .ticker("AAPL")
+    .limit(10)  // ✅ Compile error if typo!
+    .query(FinancialsEndpoint::BalanceSheets)  // Returns impl Query
+    .get(&client)
+    .await?;
+```
+
+**Benefits:**
+- ✅ Compile-time parameter validation
+- ✅ Type-safe parameter values (u32 for limit, not string)
+- ✅ Method completion in IDE shows valid parameters
+- ✅ Can't set invalid parameters for an endpoint
+- ✅ Still chainable/ergonomic
+
+**Implementation Plan:**
+1. Use existing `Execute` trait from `query.rs` (already has `.get()` method!)
+2. Add builder methods to each request type (`.ticker()`, `.limit()`, etc.)
+3. Implement `Execute` trait for request types
+4. Each endpoint builds its own URL and executes directly
+5. Migrate `tool_use.rs` and examples to new pattern
+6. Eventually deprecate/remove generic Query<'a, C, T> builder
+
+**Keep Processor Pattern:**
+The old Query had a `json_processor` field that converts raw JSON → DataFrame.
+We want to keep this flexibility:
+```rust
+trait Execute {
+    type Output;
+    type Processor: Fn(&str) -> Result<Self::Output>;  // Future: make processor pluggable
+    fn get(self) -> impl Future<Output = Result<Self::Output>>;
+}
+```
+For now, hardcode DataFrame processor in implementations. Later, make it generic.
+
+**Status:** In progress (request types in separate files, ready for Execute impl)
+
+## LLM Tool Use Interface (feat/tool-use branch) - DEPRECATED
+
+**Note:** This section describes the initial implementation. See "Type-Safe Tool Use Architecture" above for the current design.
+
+**Goal:** Enable LLMs to dynamically discover and call Polygon API endpoints through a generic, type-agnostic interface.
+
+### Design Overview
+
+**Tool Discovery System:**
+1. **List Endpoints** - Tool to discover all available API endpoints
+   - Returns: endpoint names, categories, descriptions, parameters
+   - Format: Structured metadata about each endpoint
+
+2. **Get Endpoint Details** - Tool to inspect a specific endpoint
+   - Input: endpoint name/ID
+   - Returns: Full parameter schema, examples, required vs optional params
+
+3. **Call Endpoint** - Tool to execute an API call
+   - Input: endpoint name + parameters as key-value pairs
+   - Returns: **Tabular format** (see below)
+
+### Response Format: Polars DataFrames
+
+All API responses are converted to **Polars DataFrames** - the industry-standard tabular format:
+
+```rust
+use polars::prelude::*;
+
+// Endpoints return Polars DataFrames
+pub fn tickers_all() -> Result<DataFrame> { ... }
+```
+
+**Benefits:**
+- **Industry Standard**: Everyone knows DataFrames (pandas, R, etc.)
+- **LLM-Friendly**: DataFrames are well-understood by AI models
+- **Feature-Rich**: Built-in filtering, sorting, aggregations, joins
+- **Performant**: Fastest DataFrame library in Rust, based on Apache Arrow
+- **Interoperable**: Export to JSON, Parquet, Arrow, CSV
+- **Zero-Copy**: Share data efficiently between processes
+- **Python Compatible**: Works with py-polars for Python consumers
+
+### Implementation Tasks
+
+- [x] Add Polars as optional dependency (`table` feature)
+- [x] Create `rest/table` module with DataFrame-returning endpoints
+- [x] Add JSON → DataFrame conversion (using Polars JsonReader)
+- [x] Implement all aggs endpoints (4/4)
+- [x] Implement all tickers endpoints (6/6)
+- [x] Implement all financials endpoints (4/4)
+- [ ] Create endpoint registry/metadata system
+- [ ] Implement `list_endpoints()` function
+- [ ] Implement `get_endpoint_details(name)` function  
+- [ ] Implement `call_endpoint(name, params)` → DataFrame
+- [ ] Add examples and documentation for LLM tool use
+- [ ] Consider MCP (Model Context Protocol) integration
+
+### Example Usage (Conceptual)
+
+```rust
+// LLM discovers available endpoints
+let endpoints = tool_use::list_endpoints();
+// Returns: ["tickers::all", "tickers::details", "aggs::previous_close", ...]
+
+// LLM inspects an endpoint
+let details = tool_use::get_endpoint_details("tickers::details");
+// Returns: { params: { ticker: "required", date: "optional" }, ... }
+
+// LLM calls the endpoint
+let df = tool_use::call_endpoint("tickers::details", [("ticker", "AAPL")]);
+// Returns a Polars DataFrame:
+// ┌────────┬────────────┬──────────────┬──────────┐
+// │ ticker │ name       │ market_cap   │ currency │
+// │ str    │ str        │ i64          │ str      │
+// ╞════════╪════════════╪══════════════╪══════════╡
+// │ AAPL   │ Apple Inc. │ 2800000000000│ USD      │
+// └────────┴────────────┴──────────────┴──────────┘
+```
+
+**Status:** Planning phase - `feat/tool-use` branch
+
+---
+
 ## Implementation Priority Recommendations
 
 Based on API usage patterns and importance:

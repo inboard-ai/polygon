@@ -6,6 +6,8 @@ use std::fmt;
 /// Error type for polygon.io API operations
 #[derive(Debug)]
 pub enum Error {
+    /// Environment variable error
+    VarError(std::env::VarError),
     /// HTTP request error
     #[cfg(feature = "reqwest")]
     Reqwest(reqwest::Error),
@@ -30,23 +32,24 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Error::VarError(e) => write!(f, "Environment variable error: {e}"),
             #[cfg(feature = "reqwest")]
-            Error::Reqwest(e) => write!(f, "HTTP request error: {}", e),
+            Error::Reqwest(e) => write!(f, "HTTP request error: {e}"),
             #[cfg(feature = "dotenvy")]
-            Error::Env(e) => write!(f, "Environment variable error: {}", e),
+            Error::Env(e) => write!(f, "Environment variable error: {e}"),
             Error::MissingApiKey => write!(f, "Missing API key"),
             Error::ApiError {
                 status,
                 message,
                 request_id,
             } => {
-                write!(f, "API error ({}): {}", status, message)?;
+                write!(f, "API error ({status}): {message}")?;
                 if let Some(id) = request_id {
-                    write!(f, " [request_id: {}]", id)?;
+                    write!(f, " [request_id: {id}]")?;
                 }
                 Ok(())
             }
-            Error::Custom(s) => write!(f, "{}", s),
+            Error::Custom(s) => write!(f, "{s}"),
         }
     }
 }
@@ -87,6 +90,12 @@ impl From<decoder::Error> for Error {
 impl From<serde_json::Error> for Error {
     fn from(e: serde_json::Error) -> Self {
         Error::Custom(e.to_string())
+    }
+}
+
+impl From<std::env::VarError> for Error {
+    fn from(e: std::env::VarError) -> Self {
+        Error::VarError(e)
     }
 }
 

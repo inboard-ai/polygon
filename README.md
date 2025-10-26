@@ -21,13 +21,13 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 ```rust
 use polygon::Polygon;
-use polygon::rest::aggs;
+use polygon::rest::raw;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Polygon::new()?;
-    let result = aggs::get_previous_close(&client, "AAPL").await?;
-    println!("{}", result);
+    let client = Polygon::default().with_key("your_api_key");
+    let json = raw::aggs::previous_close(&client, "AAPL").get().await?;
+    println!("{}", json);
     Ok(())
 }
 ```
@@ -37,64 +37,147 @@ Set your API key via environment variable:
 export POLYGON_API_KEY=your_key_here
 ```
 
-Or use a `.env` file, or set it manually:
+Or use a `.env` file with the `dotenvy` feature:
 ```rust
-let client = Polygon::default().with_key("your_api_key");
+let client = Polygon::new()?; // Loads from POLYGON_API_KEY env var
 ```
 
-## Query API
+## API Design
 
-Endpoints return a `Query` builder. Call `.get()` to execute:
+Each endpoint returns a request builder. Call `.get()` to execute:
 
 ```rust
-use polygon::query::Execute as _;
-use polygon::rest::{raw, tickers};
+use polygon::rest::{decoded, raw};
 
 // Raw JSON response
 let json = raw::tickers::related(&client, "AAPL").get().await?;
 
 // Decoded into typed structs
-let data = tickers::all(&client)
-    .param("limit", 10)
-    .params([("exchange", "XNYS"), ("sort", "ticker")])
+let data = decoded::tickers::all(&client)
+    .limit(10)
+    .exchange("XNYS")
     .get()
     .await?;
 
-println!("{} {}", data[0].ticker, data[0].name);
+println!("{:?} {:?}", data[0].ticker, data[0].name);
 ```
 
-**Design:**
-- Required parameters are function arguments, optional parameters use `.param()` or `.params()`
-- `rest::raw::foo` returns JSON strings, `rest::foo` returns decoded types
-- Same API for both: construct query, chain parameters, call `.get()`
-- `.param()` accepts any type implementing `Param` (integers, strings, bools)
-- Errors include HTTP status, message, and request ID
+### Three Access Modes
+
+**Raw JSON** (`rest::raw::*`) returns raw JSON strings:
+```rust
+let json = raw::aggs::aggregates(&client, "AAPL", 1, Timespan::Day, "2024-01-01", "2024-01-31")
+    .adjusted(true)
+    .limit(5)
+    .get()
+    .await?;
+```
+
+**Decoded** (`rest::decoded::*`) returns typed Rust structs (requires `decoder` feature):
+```rust
+let aggs: Vec<Agg> = decoded::aggs::aggregates(&client, "AAPL", 1, Timespan::Day, "2024-01-01", "2024-01-31")
+    .get()
+    .await?;
+```
+
+**Table** (`rest::table::*`) returns `polars` DataFrames (requires `table` feature):
+```rust
+let df: DataFrame = table::aggs::aggregates(&client, "AAPL", 1, Timespan::Day, "2024-01-01", "2024-01-31")
+    .get()
+    .await?;
+```
+
+### Features
+
+- **`reqwest`** (default): Uses [`reqwest`](https://docs.rs/reqwest) as the HTTP client. Disable to provide your own client.
+- **`decoder`** (default): Enables typed response decoding via [`decoder`](https://docs.rs/decoder). Provides `rest::decoded::*` modules.
+- **`table`**: Enables Polars DataFrame support via [`polars`](https://docs.rs/polars). Provides `rest::table::*` modules.
+- **`dotenvy`**: Enables loading API keys from `.env` files. Adds `Polygon::new()` constructor.
 
 ## Available Endpoints
 
-- `rest::aggs` - Aggregate bars (OHLC)
-- `rest::tickers` - Ticker reference data
+**Aggregates (OHLCV bars)**
+- `aggregates()` - Get bars over a date range
+- `previous_close()` - Get previous day's OHLC
+- `grouped_daily()` - Get daily bars for entire market
+- `daily_open_close()` - Get open/close for specific date
+
+**Tickers (Reference data)**
+- `all()` - List all tickers with filters
+- `details()` - Get detailed ticker information
+- `related()` - Get related companies
+- `types()` - Get all ticker types
+- `events()` - Get corporate events
+- `news()` - Get recent news
+
+**Financials (Company financials)**
+- `balance_sheets()` - Balance sheet data
+- `cash_flow_statements()` - Cash flow statements
+- `income_statements()` - Income statements
+- `ratios()` - Financial ratios
+
+## LLM Tool Use
+
+The library includes a progressive discovery interface for LLMs to explore and call endpoints dynamically:
+
+```rust
+use polygon::tool_use;
+use serde_json::json;
+
+// List available tools
+let tools = tool_use::list_tools();
+
+// Discover API structure
+let modules = tool_use::call_tool(&client, json!({
+    "tool": "list_modules",
+    "params": {}
+})).await?;
+
+// Get endpoint schema
+let schema = tool_use::call_tool(&client, json!({
+    "tool": "get_endpoint_schema",
+    "params": {
+        "module": "Aggs",
+        "endpoint": "aggregates"
+    }
+})).await?;
+
+// Call endpoint with parameters
+let data = tool_use::call_tool(&client, json!({
+    "tool": "call_endpoint",
+    "params": {
+        "module": "Aggs",
+        "endpoint": "aggregates",
+        "arguments": {
+            "ticker": "AAPL",
+            "multiplier": 1,
+            "timespan": "day",
+            "from": "2024-01-01",
+            "to": "2024-01-31"
+        }
+    }
+})).await?;
+```
+
+See `examples/llm_exploration.rs` for a complete walkthrough.
 
 ## Custom HTTP Client
 
 Implement the `Request` trait to use your own HTTP client:
 
 ```rust
-use polygon::{Request, Polygon};
+use polygon::{Request, Polygon, Result};
 
 struct MyClient;
 
 impl Request for MyClient {
-    fn new() -> Self { MyClient }
-    fn get(&self, url: &str) -> impl Future<Output = Result<String>> + Send {
-        async move { /* your implementation */ Ok(String::new()) }
-    }
-    fn post(&self, url: &str, body: &str) -> impl Future<Output = Result<String>> + Send {
-        async move { /* your implementation */ Ok(String::new()) }
+    async fn get(&self, url: &str) -> Result<String> {
+        // Your implementation
+        Ok(String::new())
     }
 }
 
-let client = Polygon::with_client(MyClient)?;
+let client = Polygon::with_client(MyClient, Some("api_key".to_string()));
 ```
 
 ## License

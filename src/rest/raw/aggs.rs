@@ -1,154 +1,77 @@
-//! Aggregates (bars) endpoint implementations
+//! Aggregates (bars) endpoint implementations returning raw JSON strings
 
 use crate::client::Polygon;
-use crate::query::Query;
+use crate::processor::Raw;
 use crate::request::Request;
+use crate::request::aggs::{Aggregates, DailyOpenClose, GroupedDaily, PreviousClose};
+use crate::request::common::Timespan;
 
 /// Get aggregate bars for a stock over a given date range
 ///
-/// # Arguments
-///
-/// * `client` - Reference to the Polygon client
-/// * `ticker` - The ticker symbol
-/// * `multiplier` - The size of the timespan multiplier (e.g., 1)
-/// * `timespan` - The size of the time window (e.g., "minute", "hour", "day", "week", "month", "quarter", "year")
-/// * `from` - The start of the aggregate time window (YYYY-MM-DD or Unix MS timestamp)
-/// * `to` - The end of the aggregate time window (YYYY-MM-DD or Unix MS timestamp)
-/// * `adjusted` - Whether results are adjusted for splits (default: true)
-/// * `sort` - Sort order: "asc" or "desc" (default: "asc")
-/// * `limit` - Limit the number of results (max 50000, default 5000)
+/// Returns a request builder that will return results as raw JSON string.
+/// Use builder methods like `.adjusted()`, `.sort()`, `.limit()` to customize the request.
 ///
 /// # Example
-///
 /// ```no_run
-/// use polygon::Polygon;
-/// use polygon::rest::raw::aggs;
-/// use polygon::query::Execute as _;
-///
-/// # #[tokio::main]
-/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = Polygon::default().with_key("your_api_key");
-/// let data = aggs::aggregates(&client, "AAPL", 1, "day", "2023-01-01", "2023-01-31").get().await?;
-/// # Ok(())
+/// # use polygon::Client;
+/// # use polygon::execute::Execute;
+/// # async fn example() {
+/// # let client = Client::new("api-key");
+/// let json = polygon::rest::raw::aggs::aggregates(&client, "AAPL", 1, "day", "2023-01-01", "2023-12-31")
+///     .adjusted(true)
+///     .get()
+///     .await
+///     .unwrap();
 /// # }
 /// ```
 pub fn aggregates<'a, Client: Request>(
     client: &'a Polygon<Client>,
-    ticker: &str,
+    ticker: impl Into<String>,
     multiplier: u32,
-    timespan: &str,
-    from: &str,
-    to: &str,
-) -> Query<'a, Client> {
-    Query::new(
-        client,
-        format!(
-            "https://api.polygon.io/v2/aggs/ticker/{}/range/{}/{}/{}/{}",
-            ticker, multiplier, timespan, from, to
-        ),
-    )
-    .optional("adjusted")
-    .optional("sort")
-    .optional("limit")
+    timespan: Timespan,
+    from: impl Into<String>,
+    to: impl Into<String>,
+) -> Aggregates<'a, Client, Raw> {
+    Aggregates::new(client, ticker, multiplier, timespan, from, to)
 }
 
 /// Get the previous day's open, high, low, and close (OHLC) for a stock
 ///
-/// # Arguments
-///
-/// * `client` - Reference to the Polygon client
-/// * `ticker` - The ticker symbol
-///
-/// # Example
-///
-/// ```no_run
-/// use polygon::Polygon;
-/// use polygon::rest::raw::aggs;
-/// use polygon::query::Execute as _;
-///
-/// # #[tokio::main]
-/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = Polygon::default().with_key("your_api_key");
-/// let data = aggs::previous_close(&client, "AAPL").get().await?;
-/// # Ok(())
-/// # }
-/// ```
+/// Returns a request builder that will return results as raw JSON string.
+/// Use builder methods like `.adjusted()` to customize the request.
 pub fn previous_close<'a, Client: Request>(
     client: &'a Polygon<Client>,
-    ticker: &str,
-) -> Query<'a, Client> {
-    Query::new(client, format!("https://api.polygon.io/v2/aggs/ticker/{}/prev", ticker))
-        .optional("adjusted")
+    ticker: impl Into<String>,
+) -> PreviousClose<'a, Client, Raw> {
+    PreviousClose::new(client, ticker)
 }
 
 /// Get the daily open, high, low, and close (OHLC) for the entire market
 ///
-/// # Arguments
-///
-/// * `client` - Reference to the Polygon client
-/// * `date` - The date for the aggregate window (YYYY-MM-DD)
-///
-/// # Example
-///
-/// ```no_run
-/// use polygon::Polygon;
-/// use polygon::rest::raw::aggs;
-/// use polygon::query::Execute as _;
-///
-/// # #[tokio::main]
-/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = Polygon::default().with_key("your_api_key");
-/// let data = aggs::grouped_daily(&client, "2023-01-09").get().await?;
-/// # Ok(())
-/// # }
-/// ```
+/// Returns a request builder that will return results as raw JSON string.
+/// Use builder methods like `.adjusted()` and `.include_otc()` to customize the request.
 pub fn grouped_daily<'a, Client: Request>(
     client: &'a Polygon<Client>,
-    date: &str,
-) -> Query<'a, Client> {
-    Query::new(
-        client,
-        format!("https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/{}", date),
-    )
-    .optional("adjusted")
-    .optional("include_otc")
+    date: impl Into<String>,
+) -> GroupedDaily<'a, Client, Raw> {
+    GroupedDaily::new(client, date)
 }
 
 /// Get the open, close, and afterhours prices of a stock on a specific date
 ///
-/// # Arguments
-///
-/// * `client` - Reference to the Polygon client
-/// * `ticker` - The ticker symbol
-/// * `date` - The date (YYYY-MM-DD)
-///
-/// # Example
-///
-/// ```no_run
-/// use polygon::Polygon;
-/// use polygon::rest::raw::aggs;
-/// use polygon::query::Execute as _;
-///
-/// # #[tokio::main]
-/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = Polygon::default().with_key("your_api_key");
-/// let data = aggs::daily_open_close(&client, "AAPL", "2023-01-09").get().await?;
-/// # Ok(())
-/// # }
-/// ```
+/// Returns a request builder that will return results as raw JSON string.
+/// Use builder methods like `.adjusted()` to customize the request.
 pub fn daily_open_close<'a, Client: Request>(
     client: &'a Polygon<Client>,
-    ticker: &str,
-    date: &str,
-) -> Query<'a, Client> {
-    Query::new(client, format!("https://api.polygon.io/v1/open-close/{}/{}", ticker, date))
-        .optional("adjusted")
+    ticker: impl Into<String>,
+    date: impl Into<String>,
+) -> DailyOpenClose<'a, Client, Raw> {
+    DailyOpenClose::new(client, ticker, date)
 }
 
 #[cfg(all(test, feature = "dotenvy"))]
 mod tests {
     use super::*;
-    use crate::query::Execute as _;
 
     fn setup() -> Polygon<reqwest::Client> {
         Polygon::new().expect("Failed to create client. Make sure POLYGON_API_KEY is set in .env file")
@@ -158,10 +81,10 @@ mod tests {
     #[ignore] // Run with: cargo test -- --ignored --test-threads=1
     async fn test_aggregates() {
         let client = setup();
-        let result = aggregates(&client, "AAPL", 1, "day", "2023-01-01", "2023-01-10")
+        let result = aggregates(&client, "AAPL", 1, Timespan::Day, "2023-01-01", "2023-01-10")
             .get()
             .await;
-        assert!(result.is_ok(), "Failed to fetch aggregates: {:?}", result);
+        assert!(result.is_ok(), "Failed to fetch aggregates: {result:?}");
     }
 
     #[tokio::test]
@@ -169,7 +92,7 @@ mod tests {
     async fn test_previous_close() {
         let client = setup();
         let result = previous_close(&client, "AAPL").get().await;
-        assert!(result.is_ok(), "Failed to fetch previous close: {:?}", result);
+        assert!(result.is_ok(), "Failed to fetch previous close: {result:?}");
     }
 
     #[tokio::test]
@@ -177,7 +100,7 @@ mod tests {
     async fn test_grouped_daily() {
         let client = setup();
         let result = grouped_daily(&client, "2023-01-09").get().await;
-        assert!(result.is_ok(), "Failed to fetch grouped daily: {:?}", result);
+        assert!(result.is_ok(), "Failed to fetch grouped daily: {result:?}");
     }
 
     #[tokio::test]
@@ -185,10 +108,6 @@ mod tests {
     async fn test_daily_open_close() {
         let client = setup();
         let result = daily_open_close(&client, "AAPL", "2023-01-09").get().await;
-        assert!(
-            result.is_ok(),
-            "Failed to fetch daily open/close: {:?}",
-            result
-        );
+        assert!(result.is_ok(), "Failed to fetch daily open/close: {result:?}");
     }
 }

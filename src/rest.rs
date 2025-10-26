@@ -2,4 +2,5 @@
 pub mod decoded;
 pub mod raw;
 
-pub use decoded::*;
+#[cfg(feature = "table")]
+pub mod table;

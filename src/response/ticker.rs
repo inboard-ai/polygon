@@ -155,17 +155,7 @@ pub struct TickerChangeResults {
     pub events: Option<Vec<TickerChangeEvent>>,
 }
 
-#[cfg(feature = "decoder")]
-impl crate::query::Decodable for Ticker {}
 
-#[cfg(feature = "decoder")]
-impl crate::query::Decodable for Vec<Ticker> {}
 
-#[cfg(feature = "decoder")]
-impl crate::query::Decodable for Vec<String> {}
 
-#[cfg(feature = "decoder")]
-impl crate::query::Decodable for Vec<TickerNews> {}
 
-#[cfg(feature = "decoder")]
-impl crate::query::Decodable for TickerChangeResults {}

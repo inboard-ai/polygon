@@ -1,54 +1,51 @@
 //! Ticker endpoint implementations
 
 use crate::client::Polygon;
-use crate::query::Query;
+use crate::processor::Raw;
 use crate::request::Request;
+use crate::request::tickers::{All, Details, Events, News, Related, Types};
 
 /// Get a list of all tickers
-pub fn all<'a, Client: Request>(client: &'a Polygon<Client>) -> Query<'a, Client> {
-    Query::new(client, "https://api.polygon.io/v3/reference/tickers")
+///
+/// Returns a request builder that will return results as raw JSON string.
+/// Use builder methods like `.ticker()`, `.ticker_type()`, `.market()`, `.limit()` to customize the request.
+pub fn all<'a, Client: Request>(client: &'a Polygon<Client>) -> All<'a, Client, Raw> {
+    All::new(client)
 }
 
 /// Get detailed information about a ticker
-pub fn details<'a, Client: Request>(
-    client: &'a Polygon<Client>,
-    ticker: &str,
-) -> Query<'a, Client> {
-    Query::new(
-        client,
-        format!("https://api.polygon.io/v3/reference/tickers/{}", ticker),
-    )
+///
+/// Returns a request builder that will return results as raw JSON string.
+/// Use builder methods like `.date()` to customize the request.
+pub fn details<'a, Client: Request>(client: &'a Polygon<Client>, ticker: &str) -> Details<'a, Client, Raw> {
+    Details::new(client, ticker)
 }
 
 /// Get tickers related to a given ticker
-pub fn related<'a, Client: Request>(
-    client: &'a Polygon<Client>,
-    ticker: &str,
-) -> Query<'a, Client> {
-    Query::new(
-        client,
-        format!("https://api.polygon.io/v1/related-companies/{}", ticker),
-    )
+///
+/// Returns a request builder that will return results as raw JSON string.
+pub fn related<'a, Client: Request>(client: &'a Polygon<Client>, ticker: &str) -> Related<'a, Client, Raw> {
+    Related::new(client, ticker)
 }
 
 /// Get all ticker types
-pub fn types<'a, Client: Request>(client: &'a Polygon<Client>) -> Query<'a, Client> {
-    Query::new(client, "https://api.polygon.io/v3/reference/tickers/types")
+///
+/// Returns a request builder that will return results as raw JSON string.
+pub fn types<'a, Client: Request>(client: &'a Polygon<Client>) -> Types<'a, Client, Raw> {
+    Types::new(client)
 }
 
 /// Get event history for a ticker at a particular point in time
 ///
-/// # Arguments
-///
-/// * `client` - Reference to the Polygon client
-/// * `ticker` - The ticker symbol
+/// Returns a request builder that will return results as raw JSON string.
+/// Use builder methods like `.types()` to customize the request.
 ///
 /// # Example
 ///
 /// ```no_run
 /// use polygon::Polygon;
 /// use polygon::rest::raw::tickers;
-/// use polygon::query::Execute as _;
+/// use polygon::execute::Execute as _;
 ///
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -57,60 +54,38 @@ pub fn types<'a, Client: Request>(client: &'a Polygon<Client>) -> Query<'a, Clie
 /// # Ok(())
 /// # }
 /// ```
-pub fn events<'a, Client: Request>(
-    client: &'a Polygon<Client>,
-    ticker: &str,
-) -> Query<'a, Client> {
-    Query::new(
-        client,
-        format!("https://api.polygon.io/vX/reference/tickers/{}/events", ticker),
-    )
-    .optional("types")
+pub fn events<'a, Client: Request>(client: &'a Polygon<Client>, ticker: &str) -> Events<'a, Client, Raw> {
+    Events::new(client, ticker)
 }
 
 /// Get the most recent news articles relating to a stock ticker symbol
 ///
-/// # Arguments
-///
-/// * `client` - Reference to the Polygon client
+/// Returns a request builder that will return results as raw JSON string.
+/// Use builder methods like `.ticker()`, `.limit()`, `.order()` to customize the request.
 ///
 /// # Example
 ///
 /// ```no_run
 /// use polygon::Polygon;
 /// use polygon::rest::raw::tickers;
-/// use polygon::query::Execute as _;
+/// use polygon::execute::Execute as _;
 ///
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let client = Polygon::default().with_key("your_api_key");
 /// let data = tickers::news(&client)
-///     .with("ticker", "AAPL")
+///     .ticker("AAPL")
 ///     .get().await?;
 /// # Ok(())
 /// # }
 /// ```
-pub fn news<'a, Client: Request>(client: &'a Polygon<Client>) -> Query<'a, Client> {
-    Query::new(client, "https://api.polygon.io/v2/reference/news")
-        .optional("ticker")
-        .optional("ticker_lt")
-        .optional("ticker_lte")
-        .optional("ticker_gt")
-        .optional("ticker_gte")
-        .optional("published_utc")
-        .optional("published_utc_lt")
-        .optional("published_utc_lte")
-        .optional("published_utc_gt")
-        .optional("published_utc_gte")
-        .optional("limit")
-        .optional("sort")
-        .optional("order")
+pub fn news<'a, Client: Request>(client: &'a Polygon<Client>) -> News<'a, Client, Raw> {
+    News::new(client)
 }
 
 #[cfg(all(test, feature = "dotenvy"))]
 mod tests {
     use super::*;
-    use crate::query::Execute as _;
 
     fn setup() -> Polygon<reqwest::Client> {
         Polygon::new().expect("Failed to create client. Make sure POLYGON_API_KEY is set in .env file")
@@ -120,8 +95,8 @@ mod tests {
     #[ignore] // Run with: cargo test -- --ignored --test-threads=1
     async fn test_all_tickers() {
         let client = setup();
-        let result = all(&client).param("limit", "5").get().await;
-        assert!(result.is_ok(), "Failed to fetch all tickers: {:?}", result);
+        let result = all(&client).limit("5").get().await;
+        assert!(result.is_ok(), "Failed to fetch all tickers: {result:?}");
     }
 
     #[tokio::test]
@@ -129,7 +104,7 @@ mod tests {
     async fn test_ticker_details() {
         let client = setup();
         let result = details(&client, "AAPL").get().await;
-        assert!(result.is_ok(), "Failed to fetch ticker details: {:?}", result);
+        assert!(result.is_ok(), "Failed to fetch ticker details: {result:?}");
     }
 
     #[tokio::test]
@@ -137,7 +112,7 @@ mod tests {
     async fn test_related_tickers() {
         let client = setup();
         let result = related(&client, "AAPL").get().await;
-        assert!(result.is_ok(), "Failed to fetch related tickers: {:?}", result);
+        assert!(result.is_ok(), "Failed to fetch related tickers: {result:?}");
     }
 
     #[tokio::test]
@@ -145,7 +120,7 @@ mod tests {
     async fn test_ticker_types() {
         let client = setup();
         let result = types(&client).get().await;
-        assert!(result.is_ok(), "Failed to fetch ticker types: {:?}", result);
+        assert!(result.is_ok(), "Failed to fetch ticker types: {result:?}");
     }
 
     #[tokio::test]
@@ -153,6 +128,6 @@ mod tests {
     async fn test_ticker_events() {
         let client = setup();
         let result = events(&client, "AAPL").get().await;
-        assert!(result.is_ok(), "Failed to fetch ticker events: {:?}", result);
+        assert!(result.is_ok(), "Failed to fetch ticker events: {result:?}");
     }
 }

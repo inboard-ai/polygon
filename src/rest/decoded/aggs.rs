@@ -1,123 +1,58 @@
 //! Decoded aggregate endpoints - returns typed data instead of JSON strings
 
 use crate::client::Polygon;
-use crate::query::Query;
+use crate::processor::Decoder;
 use crate::request::Request;
+use crate::request::aggs::{Aggregates, DailyOpenClose, GroupedDaily, PreviousClose};
+use crate::request::common::Timespan;
+use crate::response::aggs::{Agg, DailyOpenCloseAgg, GroupedDailyAgg, PreviousCloseAgg};
 use crate::rest::raw;
-use crate::schema::aggs::{Agg, DailyOpenCloseAgg, GroupedDailyAgg, PreviousCloseAgg};
-use decoder::decode::{bool, f64, i64, map, sequence, string};
 
 /// Get aggregate bars for a stock over a given date range
+///
+/// Returns a decoded request builder that will return typed `Vec<`[`Agg`]`>` data.
+/// Use builder methods like `.adjusted()`, `.sort()`, `.limit()` to customize the request.
 pub fn aggregates<'a, Client: Request>(
     client: &'a Polygon<Client>,
-    ticker: &str,
+    ticker: impl Into<String>,
     multiplier: u32,
-    timespan: &str,
-    from: &str,
-    to: &str,
-) -> Query<'a, Client, Vec<Agg>> {
-    raw::aggs::aggregates(client, ticker, multiplier, timespan, from, to)
-        .with_decoder(|v| decode_results(v, decode_agg))
+    timespan: Timespan,
+    from: impl Into<String>,
+    to: impl Into<String>,
+) -> Aggregates<'a, Client, Decoder<Vec<Agg>>> {
+    raw::aggs::aggregates(client, ticker, multiplier, timespan, from, to).decoded()
 }
 
 /// Get the previous day's OHLC for a stock
+///
+/// Returns a decoded request builder that will return typed `Vec<`[`PreviousCloseAgg`]`>` data.
+/// Use builder methods like `.adjusted()` to customize the request.
 pub fn previous_close<'a, Client: Request>(
     client: &'a Polygon<Client>,
-    ticker: &str,
-) -> Query<'a, Client, Vec<PreviousCloseAgg>> {
-    raw::aggs::previous_close(client, ticker)
-        .with_decoder(|v| decode_results(v, decode_previous_close_agg))
+    ticker: impl Into<String>,
+) -> PreviousClose<'a, Client, Decoder<Vec<PreviousCloseAgg>>> {
+    raw::aggs::previous_close(client, ticker).decoded()
 }
 
 /// Get daily OHLC for the entire market
+///
+/// Returns a decoded request builder that will return typed `Vec<`[`GroupedDailyAgg`]`>` data.
+/// Use builder methods like `.adjusted()` and `.include_otc()` to customize the request.
 pub fn grouped_daily<'a, Client: Request>(
     client: &'a Polygon<Client>,
-    date: &str,
-) -> Query<'a, Client, Vec<GroupedDailyAgg>> {
-    raw::aggs::grouped_daily(client, date)
-        .with_decoder(|v| decode_results(v, decode_grouped_daily_agg))
+    date: impl Into<String>,
+) -> GroupedDaily<'a, Client, Decoder<Vec<GroupedDailyAgg>>> {
+    raw::aggs::grouped_daily(client, date).decoded()
 }
 
 /// Get the open/close/afterhours prices of a stock on a specific date
+///
+/// Returns a decoded request builder that will return typed DailyOpenCloseAgg data.
+/// Use builder methods like `.adjusted()` to customize the request.
 pub fn daily_open_close<'a, Client: Request>(
     client: &'a Polygon<Client>,
-    ticker: &str,
-    date: &str,
-) -> Query<'a, Client, DailyOpenCloseAgg> {
-    raw::aggs::daily_open_close(client, ticker, date).with_decoder(decode_daily_open_close)
-}
-
-/// Generic helper to decode API responses with a "results" array
-fn decode_results<T>(
-    value: decoder::Value,
-    item_decoder: impl Fn(decoder::Value) -> decoder::Result<T>,
-) -> decoder::Result<Vec<T>> {
-    let mut response = map(value)?;
-    response.required("results", sequence(item_decoder))
-}
-
-fn decode_agg(value: decoder::Value) -> decoder::Result<Agg> {
-    let mut agg = map(value)?;
-
-    Ok(Agg {
-        open: agg.optional("o", f64)?,
-        high: agg.optional("h", f64)?,
-        low: agg.optional("l", f64)?,
-        close: agg.optional("c", f64)?,
-        volume: agg.optional("v", f64)?,
-        vwap: agg.optional("vw", f64)?,
-        timestamp: agg.optional("t", i64)?,
-        transactions: agg.optional("n", i64)?,
-        otc: agg.optional("otc", bool)?,
-    })
-}
-
-fn decode_previous_close_agg(value: decoder::Value) -> decoder::Result<PreviousCloseAgg> {
-    let mut prev = map(value)?;
-
-    Ok(PreviousCloseAgg {
-        ticker: prev.optional("T", string)?,
-        close: prev.optional("c", f64)?,
-        high: prev.optional("h", f64)?,
-        low: prev.optional("l", f64)?,
-        open: prev.optional("o", f64)?,
-        timestamp: prev.optional("t", i64)?,
-        volume: prev.optional("v", f64)?,
-        vwap: prev.optional("vw", f64)?,
-    })
-}
-
-fn decode_grouped_daily_agg(value: decoder::Value) -> decoder::Result<GroupedDailyAgg> {
-    let mut grouped = map(value)?;
-
-    Ok(GroupedDailyAgg {
-        ticker: grouped.optional("T", string)?,
-        open: grouped.optional("o", f64)?,
-        high: grouped.optional("h", f64)?,
-        low: grouped.optional("l", f64)?,
-        close: grouped.optional("c", f64)?,
-        volume: grouped.optional("v", f64)?,
-        vwap: grouped.optional("vw", f64)?,
-        timestamp: grouped.optional("t", i64)?,
-        transactions: grouped.optional("n", i64)?,
-        otc: grouped.optional("otc", bool)?,
-    })
-}
-
-fn decode_daily_open_close(value: decoder::Value) -> decoder::Result<DailyOpenCloseAgg> {
-    let mut daily = map(value)?;
-
-    Ok(DailyOpenCloseAgg {
-        after_hours: daily.optional("afterHours", f64)?,
-        close: daily.optional("close", f64)?,
-        from: daily.optional("from", string)?,
-        high: daily.optional("high", f64)?,
-        low: daily.optional("low", f64)?,
-        open: daily.optional("open", f64)?,
-        pre_market: daily.optional("preMarket", f64)?,
-        status: daily.optional("status", string)?,
-        symbol: daily.optional("symbol", string)?,
-        volume: daily.optional("volume", f64)?,
-        otc: daily.optional("otc", bool)?,
-    })
+    ticker: impl Into<String>,
+    date: impl Into<String>,
+) -> DailyOpenClose<'a, Client, Decoder<DailyOpenCloseAgg>> {
+    raw::aggs::daily_open_close(client, ticker, date).decoded()
 }

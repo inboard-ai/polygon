@@ -1,7 +1,7 @@
-//! Example showing the query API for ticker and aggregate endpoints
+//! Example showing the endpoint API for ticker and aggregate requests
 use polygon::Polygon;
-use polygon::query::Execute as _;
-use polygon::rest::{aggs, raw, tickers};
+use polygon::rest::decoded::{aggs, tickers};
+use polygon::rest::raw;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -19,17 +19,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(event_list) = events.events {
         println!("  Events: {} total", event_list.len());
         for (i, event) in event_list.iter().take(3).enumerate() {
-            println!("    {}: {} on {} -> {}", i + 1, event.event_type, event.date, event.ticker_change.ticker);
+            println!(
+                "    {}: {} on {} -> {}",
+                i + 1,
+                event.event_type,
+                event.date,
+                event.ticker_change.ticker
+            );
         }
     }
     println!();
 
     println!("=== Example 3: Ticker News (Decoded with params) ===");
-    let news = tickers::news(&client)
-        .param("ticker", "AAPL")
-        .param("limit", "5")
-        .get()
-        .await?;
+    let news = tickers::news(&client).ticker("AAPL").limit("5").get().await?;
     println!("Latest news articles: {} total", news.len());
     for (i, article) in news.iter().enumerate() {
         println!("  {}. {}", i + 1, article.title.as_deref().unwrap_or("(no title)"));
@@ -51,11 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("=== Example 5: List Tickers (with params) ===");
-    let response = tickers::all(&client)
-        .param("limit", "10")
-        .param("market", "stocks")
-        .get()
-        .await?;
+    let response = tickers::all(&client).limit("10").exchange("XNYS").get().await?;
     println!("First 10 stock tickers:");
     for (i, t) in response.into_iter().enumerate() {
         println!(

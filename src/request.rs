@@ -1,17 +1,14 @@
-//! HTTP request trait and implementations
+//! HTTP request trait and request parameter types
 
 use crate::error::Result;
+use crate::response::Response;
 
 use std::future::Future;
 
-/// Trait for HTTP response objects
-pub trait Response {
-    /// Get the HTTP status code
-    fn status(&self) -> u16;
-
-    /// Get the response body as a string
-    fn body(self) -> String;
-}
+pub mod aggs;
+pub mod common;
+pub mod financials;
+pub mod tickers;
 
 /// Trait for HTTP clients that can make requests to the polygon.io API.
 ///
@@ -33,9 +30,11 @@ pub trait Request: Send + Sync {
 }
 
 #[cfg(feature = "reqwest")]
+/// HTTP response implementation for the reqwest client
 pub struct HttpResponse {
     status: u16,
     body: String,
+    request_id: Option<String>,
 }
 
 #[cfg(feature = "reqwest")]
@@ -44,8 +43,12 @@ impl Response for HttpResponse {
         self.status
     }
 
-    fn body(self) -> String {
-        self.body
+    fn body(&self) -> &str {
+        &self.body
+    }
+
+    fn request_id(&self) -> &Option<String> {
+        &self.request_id
     }
 }
 
@@ -60,14 +63,30 @@ impl Request for reqwest::Client {
     async fn get(&self, url: &str) -> Result<Self::Response> {
         let response = self.get(url).send().await?;
         let status = response.status().as_u16();
+        let request_id = response
+            .headers()
+            .get("X-Request-Id")
+            .and_then(|h| h.to_str().ok().map(|s| s.to_string()));
         let body = response.text().await?;
-        Ok(HttpResponse { status, body })
+        Ok(HttpResponse {
+            status,
+            body,
+            request_id,
+        })
     }
 
     async fn post(&self, url: &str, body: &str) -> Result<Self::Response> {
         let response = self.post(url).body(body.to_string()).send().await?;
         let status = response.status().as_u16();
+        let request_id = response
+            .headers()
+            .get("X-Request-Id")
+            .and_then(|h| h.to_str().ok().map(|s| s.to_string()));
         let body = response.text().await?;
-        Ok(HttpResponse { status, body })
+        Ok(HttpResponse {
+            status,
+            body,
+            request_id,
+        })
     }
 }

@@ -4,26 +4,24 @@
 //!
 //! ```no_run
 //! use polygon::Polygon;
-//! use polygon::rest::aggs;
-//! use polygon::query::Execute as _;
+//! use polygon::rest::raw;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let client = Polygon::default().with_key("your_api_key");
-//!     let result = aggs::previous_close(&client, "AAPL").get().await?;
-//!     println!("{:?}", result);
+//!     let json = raw::aggs::previous_close(&client, "AAPL").get().await?;
+//!     println!("{}", json);
 //!     Ok(())
 //! }
 //! ```
 //!
-//! # Query API
+//! # Endpoint API
 //!
-//! Endpoints return a `Query` builder. Call `.get()` to execute:
+//! Each endpoint returns a specific request builder type. Call `.get()` to execute:
 //!
 //! ```no_run
 //! use polygon::Polygon;
-//! use polygon::query::Execute as _;
-//! use polygon::rest::{raw, tickers};
+//! use polygon::rest::{decoded, raw};
 //!
 //! # #[tokio::main]
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -33,9 +31,9 @@
 //! let json = raw::tickers::related(&client, "AAPL").get().await?;
 //!
 //! // Decoded into typed structs
-//! let data = tickers::all(&client)
-//!     .param("limit", 10)
-//!     .params([("exchange", "XNYS"), ("sort", "ticker")])
+//! let data = decoded::tickers::all(&client)
+//!     .limit(10)
+//!     .exchange("XNYS")
 //!     .get()
 //!     .await?;
 //!
@@ -56,21 +54,72 @@
 //! - **`dotenvy`** - Enables loading API keys from environment variables via [`dotenvy`](https://docs.rs/dotenvy).
 //!   Adds `Polygon::new()` which loads `POLYGON_API_KEY` from `.env` or environment.
 //!   Without this feature, use `Polygon::default().with_key("your_key")` instead.
+//!
+//! - **`table`** - Enables Polars DataFrame output via [`polars`](https://docs.rs/polars).
+//!   Provides `rest::table::*` modules that return DataFrames instead of JSON or structs.
+//!
+//! # LLM Tool Use
+//!
+//! Progressive discovery interface for AI agents:
+//!
+//! ```no_run
+//! use polygon::Polygon;
+//! use polygon::tool_use;
+//! use serde_json::json;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let client = Polygon::default().with_key("your_api_key");
+//!
+//! // Discover tools, modules, and endpoints
+//! let tools = tool_use::call_tool(&client, json!({
+//!     "tool": "list_tools",
+//!     "params": {}
+//! })).await?;
+//!
+//! // Get endpoint schema
+//! let schema = tool_use::call_tool(&client, json!({
+//!     "tool": "get_endpoint_schema",
+//!     "params": { "module": "Aggs", "endpoint": "aggregates" }
+//! })).await?;
+//!
+//! // Call endpoint
+//! let data = tool_use::call_tool(&client, json!({
+//!     "tool": "call_endpoint",
+//!     "params": {
+//!         "module": "Aggs",
+//!         "endpoint": "aggregates",
+//!         "arguments": {
+//!             "ticker": "AAPL",
+//!             "multiplier": 1,
+//!             "timespan": "week",
+//!             "from": "2024-01-01",
+//!             "to": "2024-01-31"
+//!         }
+//!     }
+//! })).await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! See [`tool_use`] module for details.
 
 #![warn(missing_docs)]
 
 mod client;
-mod error;
-mod request;
+pub mod error;
+pub mod request;
+pub mod response;
 pub mod rest;
-pub mod schema;
 
-#[cfg(feature = "decoder")]
-pub mod query;
+pub mod endpoint;
+pub mod execute;
+pub mod processor;
+pub mod tool_use;
 
-// Re-export main types
 pub use error::{Error, Result};
-pub use request::{Request, Response};
+pub use request::Request;
+pub use response::Response;
 
 /// The main polygon.io API client with the default `reqwest::Client` HTTP client.
 ///

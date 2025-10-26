@@ -1,8 +1,7 @@
 //! Example showing typed responses from polygon.io
 
 use polygon::Polygon;
-use polygon::query::Execute as _;
-use polygon::rest::aggs;
+use polygon::rest::decoded::aggs;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
