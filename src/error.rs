@@ -2,7 +2,6 @@
 
 use std::error::Error as StdError;
 use std::fmt;
-use std::sync::Arc;
 
 /// Error type for polygon.io API operations
 #[derive(Debug, Clone)]
@@ -11,10 +10,10 @@ pub enum Error {
     VarError(std::env::VarError),
     /// HTTP request error
     #[cfg(feature = "reqwest")]
-    Reqwest(Arc<reqwest::Error>),
+    Reqwest(std::sync::Arc<reqwest::Error>),
     /// Environment variable error
     #[cfg(feature = "dotenvy")]
-    Env(Arc<dotenvy::Error>),
+    Env(std::sync::Arc<dotenvy::Error>),
     /// API key is missing
     MissingApiKey,
     /// API returned an error response
@@ -70,14 +69,14 @@ impl StdError for Error {
 #[cfg(feature = "reqwest")]
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
-        Error::Reqwest(Arc::new(e))
+        Error::Reqwest(std::sync::Arc::new(e))
     }
 }
 
 #[cfg(feature = "dotenvy")]
 impl From<dotenvy::Error> for Error {
     fn from(e: dotenvy::Error) -> Self {
-        Error::Env(Arc::new(e))
+        Error::Env(std::sync::Arc::new(e))
     }
 }
 

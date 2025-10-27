@@ -22,7 +22,7 @@ serde_json = { version = "1.0", optional = true }
 serde_urlencoded = { version = "0.7", optional = true }
 polars = { version = "0.44", optional = true, features = ["json", "lazy"] }
 schemars = { version = "0.8", optional = true, features = ["derive"] }
-arc-swap = "1.7.1"
+arc-swap = { version = "1.7.1", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
@@ -31,7 +31,7 @@ dotenvy = { version = "0.15" }
 serde_json = "1.0"
 
 [features]
-default = ["reqwest", "decoder"]
+default = ["reqwest", "decoder", "dep:arc-swap"]
 reqwest = ["dep:reqwest"]
 dotenvy = ["dep:dotenvy"]
 decoder = [
