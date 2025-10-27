@@ -1,5 +1,6 @@
 //! DataFrame processor. Converts JSON response to Polars DataFrame
-use polars::prelude::*;
+use polars_core::prelude::*;
+use polars_io::prelude::*;
 use std::io::Cursor;
 
 use crate::error::Result;
@@ -11,9 +12,9 @@ pub struct Table;
 
 #[cfg(feature = "table")]
 impl Processor for Table {
-    type Output = polars::prelude::DataFrame;
+    type Output = DataFrame;
 
-    fn process<R: Response>(&self, response: Result<R>) -> Result<polars::prelude::DataFrame> {
+    fn process<R: Response>(&self, response: Result<R>) -> Result<DataFrame> {
         let resp = response?; // Propagate HTTP errors
         if resp.status() != 200 {
             return Err(crate::error::Error::ApiError {
