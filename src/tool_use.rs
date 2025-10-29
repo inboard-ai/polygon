@@ -89,32 +89,41 @@ use crate::error::{Error, Result};
 use crate::request::Request;
 use crate::request::{aggs, financials, tickers};
 
-/// Tool metadata
+/// Tool information
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Tool {
-    /// Tool name
+pub struct ToolInfo {
+    /// Tool unique identifier
+    pub id: String,
+    /// Human-readable tool name
     pub name: String,
-    /// Tool description
+    /// Description of what the tool does
     pub description: String,
-    /// JSON Schema for parameters
-    pub parameters: Value,
+    /// JSON Schema for the tool's parameters
+    pub schema: Value,
+}
+
+/// Get details for a specific tool in emporium protocol format
+pub fn get_tool_details(tool_id: &str) -> Option<ToolInfo> {
+    list_tools().into_iter().find(|t| t.id == tool_id)
 }
 
 /// List all available tools
-fn list_tools() -> Vec<Tool> {
+pub fn list_tools() -> Vec<ToolInfo> {
     vec![
-        Tool {
+        ToolInfo {
+            id: "list_modules".to_string(),
             name: "list_modules".to_string(),
             description: "List all API modules (categories of endpoints)".to_string(),
-            parameters: json!({
+            schema: json!({
                 "type": "object",
                 "properties": {}
             }),
         },
-        Tool {
+        ToolInfo {
+            id: "list_endpoints".to_string(),
             name: "list_endpoints".to_string(),
             description: "List all endpoints within a module".to_string(),
-            parameters: json!({
+            schema: json!({
                 "type": "object",
                 "properties": {
                     "module": {
@@ -126,10 +135,11 @@ fn list_tools() -> Vec<Tool> {
                 "required": ["module"]
             }),
         },
-        Tool {
+        ToolInfo {
+            id: "get_endpoint_schema".to_string(),
             name: "get_endpoint_schema".to_string(),
             description: "Get the parameter schema for a specific endpoint".to_string(),
-            parameters: json!({
+            schema: json!({
                 "type": "object",
                 "properties": {
                     "module": {
@@ -145,10 +155,11 @@ fn list_tools() -> Vec<Tool> {
                 "required": ["module", "endpoint"]
             }),
         },
-        Tool {
+        ToolInfo {
+            id: "call_endpoint".to_string(),
             name: "call_endpoint".to_string(),
             description: "Call an API endpoint to get actual data".to_string(),
-            parameters: json!({
+            schema: json!({
                 "type": "object",
                 "properties": {
                     "module": {
@@ -165,7 +176,21 @@ fn list_tools() -> Vec<Tool> {
                         "description": "Endpoint-specific arguments (use get_endpoint_schema to discover)"
                     }
                 },
-                "required": ["module", "endpoint", "arguments"]
+                "required": ["module", "endpoint", "arguments"],
+                "output": {
+                    "type": "dataframe",
+                    "description": "Returns structured data that can be displayed as a table",
+                    "columns": [
+                        {"name": "c", "alias": "Close", "dtype": "number"},
+                        {"name": "h", "alias": "High", "dtype": "number"},
+                        {"name": "l", "alias": "Low", "dtype": "number"},
+                        {"name": "o", "alias": "Open", "dtype": "number"},
+                        {"name": "t", "alias": "Timestamp", "dtype": "number"},
+                        {"name": "v", "alias": "Volume", "dtype": "number"},
+                        {"name": "vw", "alias": "VWAP", "dtype": "number"},
+                        {"name": "n", "alias": "Trades", "dtype": "number"}
+                    ]
+                }
             }),
         },
     ]

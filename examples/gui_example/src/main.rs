@@ -1,6 +1,6 @@
 use iced::widget::{center, column, container, rule, scrollable, table, text};
 use iced::{Center, Element, Shrink, Task, Theme};
-use polars::prelude::*;
+use polars_core::prelude::*;
 
 use polygon::rest::tickers;
 
