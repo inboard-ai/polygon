@@ -80,7 +80,6 @@
 //! See `examples/llm_exploration.rs` for a complete working example.
 
 use schemars::schema_for;
-use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::client::Polygon;
@@ -89,17 +88,21 @@ use crate::error::{Error, Result};
 use crate::request::Request;
 use crate::request::{aggs, financials, tickers};
 
-/// Tool information
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolInfo {
-    /// Tool unique identifier
-    pub id: String,
-    /// Human-readable tool name
-    pub name: String,
-    /// Description of what the tool does
-    pub description: String,
-    /// JSON Schema for the tool's parameters
-    pub schema: Value,
+// Always use emporium-core types
+pub use emporium_core::{ColumnDef, Schema, ToolInfo};
+
+/// Result from executing a tool - can be text or structured data
+#[derive(Debug, Clone)]
+pub enum ToolCallResult {
+    /// Plain text result
+    Text(String),
+    /// Structured tabular data with schema
+    DataFrame {
+        /// The actual JSON data
+        data: Value,
+        /// Column definitions describing the data structure
+        schema: Schema,
+    },
 }
 
 /// Get details for a specific tool in emporium protocol format
@@ -176,28 +179,14 @@ pub fn list_tools() -> Vec<ToolInfo> {
                         "description": "Endpoint-specific arguments (use get_endpoint_schema to discover)"
                     }
                 },
-                "required": ["module", "endpoint", "arguments"],
-                "output": {
-                    "type": "dataframe",
-                    "description": "Returns structured data that can be displayed as a table",
-                    "columns": [
-                        {"name": "c", "alias": "Close", "dtype": "number"},
-                        {"name": "h", "alias": "High", "dtype": "number"},
-                        {"name": "l", "alias": "Low", "dtype": "number"},
-                        {"name": "o", "alias": "Open", "dtype": "number"},
-                        {"name": "t", "alias": "Timestamp", "dtype": "number"},
-                        {"name": "v", "alias": "Volume", "dtype": "number"},
-                        {"name": "vw", "alias": "VWAP", "dtype": "number"},
-                        {"name": "n", "alias": "Trades", "dtype": "number"}
-                    ]
-                }
+                "required": ["module", "endpoint", "arguments"]
             }),
         },
     ]
 }
 
-/// Universal tool caller
-pub async fn call_tool<Client: Request>(client: &Polygon<Client>, request: Value) -> Result<Value> {
+/// Universal tool caller - returns structured results
+pub async fn call_tool<Client: Request>(client: &Polygon<Client>, request: Value) -> Result<ToolCallResult> {
     let tool = request
         .get("tool")
         .and_then(|v| v.as_str())
@@ -208,10 +197,19 @@ pub async fn call_tool<Client: Request>(client: &Polygon<Client>, request: Value
         .ok_or_else(|| Error::Custom("Missing 'params' field".to_string()))?;
 
     match tool {
-        "list_tools" => Ok(serde_json::to_value(list_tools())?),
-        "list_modules" => list_modules(),
-        "list_endpoints" => list_endpoints(params),
-        "get_endpoint_schema" => get_endpoint_schema(params),
+        "list_tools" => Ok(ToolCallResult::Text(serde_json::to_string(&list_tools())?)),
+        "list_modules" => {
+            let result = list_modules()?;
+            Ok(ToolCallResult::Text(result.to_string()))
+        }
+        "list_endpoints" => {
+            let result = list_endpoints(params)?;
+            Ok(ToolCallResult::Text(result.to_string()))
+        }
+        "get_endpoint_schema" => {
+            let result = get_endpoint_schema(params)?;
+            Ok(ToolCallResult::Text(result.to_string()))
+        }
         "call_endpoint" => call_endpoint(client, params).await,
         _ => Err(Error::Custom(format!("Unknown tool: {tool}"))),
     }
@@ -315,8 +313,8 @@ fn get_endpoint_schema(params: &Value) -> Result<Value> {
     serde_json::to_value(schema).map_err(|e| Error::Custom(format!("Failed to serialize schema: {e}")))
 }
 
-/// Call an endpoint with arguments
-async fn call_endpoint<Client: Request>(client: &Polygon<Client>, params: &Value) -> Result<Value> {
+/// Call an endpoint with arguments - returns structured DataFrame result
+async fn call_endpoint<Client: Request>(client: &Polygon<Client>, params: &Value) -> Result<ToolCallResult> {
     let module = params
         .get("module")
         .and_then(|v| v.as_str())
@@ -342,7 +340,68 @@ async fn call_endpoint<Client: Request>(client: &Polygon<Client>, params: &Value
     };
 
     // Parse to JSON Value
-    serde_json::from_str(&json_str).map_err(|e| Error::Custom(format!("Failed to parse JSON: {e}")))
+    let data: Value =
+        serde_json::from_str(&json_str).map_err(|e| Error::Custom(format!("Failed to parse JSON: {e}")))?;
+
+    // Get schema for this endpoint
+    let schema = get_output_schema(module, endpoint);
+
+    Ok(ToolCallResult::DataFrame { data, schema })
+}
+
+/// Get the output schema for an endpoint
+fn get_output_schema(module: &str, endpoint: &str) -> Schema {
+    match (module, endpoint) {
+        ("Aggs", "aggregates")
+        | ("Aggs", "previous_close")
+        | ("Aggs", "grouped_daily")
+        | ("Aggs", "daily_open_close") => {
+            vec![
+                ColumnDef {
+                    name: "c".to_string(),
+                    alias: "Close".to_string(),
+                    dtype: "number".to_string(),
+                },
+                ColumnDef {
+                    name: "h".to_string(),
+                    alias: "High".to_string(),
+                    dtype: "number".to_string(),
+                },
+                ColumnDef {
+                    name: "l".to_string(),
+                    alias: "Low".to_string(),
+                    dtype: "number".to_string(),
+                },
+                ColumnDef {
+                    name: "o".to_string(),
+                    alias: "Open".to_string(),
+                    dtype: "number".to_string(),
+                },
+                ColumnDef {
+                    name: "t".to_string(),
+                    alias: "Timestamp".to_string(),
+                    dtype: "number".to_string(),
+                },
+                ColumnDef {
+                    name: "v".to_string(),
+                    alias: "Volume".to_string(),
+                    dtype: "number".to_string(),
+                },
+                ColumnDef {
+                    name: "vw".to_string(),
+                    alias: "VWAP".to_string(),
+                    dtype: "number".to_string(),
+                },
+                ColumnDef {
+                    name: "n".to_string(),
+                    alias: "Trades".to_string(),
+                    dtype: "number".to_string(),
+                },
+            ]
+        }
+        // Add more schemas for other endpoints as needed
+        _ => vec![],
+    }
 }
 
 /// Build endpoint enum from components
