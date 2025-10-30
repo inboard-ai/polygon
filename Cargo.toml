@@ -26,6 +26,7 @@ polars-io = { version = "0.51", optional = true, default-features = false, featu
 ] }
 schemars = { version = "0.8", optional = true, features = ["derive"] }
 arc-swap = { version = "1.7.1", optional = true }
+emporium-core = { path = "../emporium/core" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
