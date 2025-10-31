@@ -414,6 +414,224 @@ fn get_output_schema(module: &str, endpoint: &str) -> Schema {
                 },
             ]
         }
+        ("Tickers", "all") => {
+            vec![
+                ColumnDef {
+                    name: "ticker".to_string(),
+                    alias: "Ticker".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "name".to_string(),
+                    alias: "Name".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "market".to_string(),
+                    alias: "Market".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "locale".to_string(),
+                    alias: "Locale".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "primary_exchange".to_string(),
+                    alias: "Primary Exchange".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "type".to_string(),
+                    alias: "Type".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "active".to_string(),
+                    alias: "Active".to_string(),
+                    dtype: "boolean".to_string(),
+                },
+                ColumnDef {
+                    name: "currency_name".to_string(),
+                    alias: "Currency".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "cik".to_string(),
+                    alias: "CIK".to_string(),
+                    dtype: "string".to_string(),
+                },
+            ]
+        }
+        ("Tickers", "details") => {
+            vec![
+                ColumnDef {
+                    name: "ticker".to_string(),
+                    alias: "Ticker".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "name".to_string(),
+                    alias: "Name".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "market".to_string(),
+                    alias: "Market".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "locale".to_string(),
+                    alias: "Locale".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "primary_exchange".to_string(),
+                    alias: "Primary Exchange".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "type".to_string(),
+                    alias: "Type".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "active".to_string(),
+                    alias: "Active".to_string(),
+                    dtype: "boolean".to_string(),
+                },
+                ColumnDef {
+                    name: "description".to_string(),
+                    alias: "Description".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "market_cap".to_string(),
+                    alias: "Market Cap".to_string(),
+                    dtype: "number".to_string(),
+                },
+                ColumnDef {
+                    name: "phone_number".to_string(),
+                    alias: "Phone".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "address".to_string(),
+                    alias: "Address".to_string(),
+                    dtype: "object".to_string(),
+                },
+            ]
+        }
+        ("Tickers", "news") => {
+            vec![
+                ColumnDef {
+                    name: "id".to_string(),
+                    alias: "ID".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "publisher".to_string(),
+                    alias: "Publisher".to_string(),
+                    dtype: "object".to_string(),
+                },
+                ColumnDef {
+                    name: "title".to_string(),
+                    alias: "Title".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "author".to_string(),
+                    alias: "Author".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "published_utc".to_string(),
+                    alias: "Published".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "article_url".to_string(),
+                    alias: "URL".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "tickers".to_string(),
+                    alias: "Tickers".to_string(),
+                    dtype: "object".to_string(),
+                },
+                ColumnDef {
+                    name: "amp_url".to_string(),
+                    alias: "AMP URL".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "image_url".to_string(),
+                    alias: "Image".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "description".to_string(),
+                    alias: "Description".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "keywords".to_string(),
+                    alias: "Keywords".to_string(),
+                    dtype: "object".to_string(),
+                },
+            ]
+        }
+        ("Tickers", "events") | ("Tickers", "related") | ("Tickers", "types") => {
+            // Generic schema for these endpoints - they return different structures
+            vec![]
+        }
+        ("Financials", "income_statements") 
+        | ("Financials", "balance_sheets")
+        | ("Financials", "cash_flow_statements")
+        | ("Financials", "ratios") => {
+            vec![
+                ColumnDef {
+                    name: "cik".to_string(),
+                    alias: "CIK".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "company_name".to_string(),
+                    alias: "Company Name".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "start_date".to_string(),
+                    alias: "Start Date".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "end_date".to_string(),
+                    alias: "End Date".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "fiscal_period".to_string(),
+                    alias: "Fiscal Period".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "fiscal_year".to_string(),
+                    alias: "Fiscal Year".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "timeframe".to_string(),
+                    alias: "Timeframe".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "financials".to_string(),
+                    alias: "Financials".to_string(),
+                    dtype: "object".to_string(),
+                },
+            ]
+        }
         // Add more schemas for other endpoints as needed
         _ => vec![],
     }
