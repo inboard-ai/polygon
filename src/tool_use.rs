@@ -102,6 +102,8 @@ pub enum ToolCallResult {
         data: Value,
         /// Column definitions describing the data structure
         schema: Schema,
+        /// Optional metadata from the API response
+        metadata: Option<Value>,
     },
 }
 
@@ -340,13 +342,26 @@ async fn call_endpoint<Client: Request>(client: &Polygon<Client>, params: &Value
     };
 
     // Parse to JSON Value
-    let data: Value =
+    let mut response: Value =
         serde_json::from_str(&json_str).map_err(|e| Error::Custom(format!("Failed to parse JSON: {e}")))?;
+
+    // Extract data and metadata - Polygon API typically has "results" as the data array
+    // and everything else (next_url, request_id, status, count, etc.) as metadata
+    let (data, metadata) = if let Some(results) = response.get("results").cloned() {
+        // Extract metadata by removing the results field
+        if let Some(obj) = response.as_object_mut() {
+            obj.remove("results");
+        }
+        (results, Some(response))
+    } else {
+        // No results field, send whole response as data (defensive coding)
+        (response, None)
+    };
 
     // Get schema for this endpoint
     let schema = get_output_schema(module, endpoint);
 
-    Ok(ToolCallResult::DataFrame { data, schema })
+    Ok(ToolCallResult::DataFrame { data, schema, metadata })
 }
 
 /// Get the output schema for an endpoint

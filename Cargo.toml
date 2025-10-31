@@ -29,6 +29,9 @@ arc-swap = { version = "1.7.1", optional = true }
 emporium-core = { git = "https://github.com/inboard-ai/emporium.git", branch = "dev" }
 
 [dev-dependencies]
+polars-core = { version = "0.51", default-features = false, features = [
+    "fmt_no_tty",
+] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 decoder = { version = "0.0.3" }
 dotenvy = { version = "0.15" }
@@ -75,6 +78,10 @@ required-features = ["dotenvy", "table"]
 
 [[example]]
 name = "typed_query"
+required-features = ["dotenvy", "table"]
+
+[[example]]
+name = "test_tools"
 required-features = ["dotenvy", "table"]
 
 # Uncomment for local development

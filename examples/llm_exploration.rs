@@ -87,9 +87,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
     match data {
-        ToolCallResult::DataFrame { data, schema } => {
+        ToolCallResult::DataFrame { data, schema, metadata } => {
             println!("AAPL aggregates:\n{}\n", serde_json::to_string_pretty(&data)?);
             println!("Schema: {} columns", schema.len());
+            if let Some(meta) = metadata {
+                println!("Metadata: {}", serde_json::to_string_pretty(&meta)?);
+            }
         }
         ToolCallResult::Text(text) => {
             println!("AAPL aggregates:\n{}\n", text);
