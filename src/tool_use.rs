@@ -194,25 +194,36 @@ pub async fn call_tool<Client: Request>(client: &Polygon<Client>, request: Value
         .and_then(|v| v.as_str())
         .ok_or_else(|| Error::Custom("Missing 'tool' field".to_string()))?;
 
-    let params = request
-        .get("params")
-        .ok_or_else(|| Error::Custom("Missing 'params' field".to_string()))?;
-
     match tool {
         "list_tools" => Ok(ToolCallResult::Text(serde_json::to_string(&list_tools())?)),
         "list_modules" => {
             let result = list_modules()?;
+
             Ok(ToolCallResult::Text(result.to_string()))
         }
         "list_endpoints" => {
+            let params = request
+                .get("params")
+                .ok_or_else(|| Error::Custom("Missing 'params' field".to_string()))?;
             let result = list_endpoints(params)?;
+
             Ok(ToolCallResult::Text(result.to_string()))
         }
         "get_endpoint_schema" => {
+            let params = request
+                .get("params")
+                .ok_or_else(|| Error::Custom("Missing 'params' field".to_string()))?;
             let result = get_endpoint_schema(params)?;
+
             Ok(ToolCallResult::Text(result.to_string()))
         }
-        "call_endpoint" => call_endpoint(client, params).await,
+        "call_endpoint" => {
+            let params = request
+                .get("params")
+                .ok_or_else(|| Error::Custom("Missing 'params' field".to_string()))?;
+
+            call_endpoint(client, params).await
+        }
         _ => Err(Error::Custom(format!("Unknown tool: {tool}"))),
     }
 }
@@ -585,7 +596,7 @@ fn get_output_schema(module: &str, endpoint: &str) -> Schema {
             // Generic schema for these endpoints - they return different structures
             vec![]
         }
-        ("Financials", "income_statements") 
+        ("Financials", "income_statements")
         | ("Financials", "balance_sheets")
         | ("Financials", "cash_flow_statements")
         | ("Financials", "ratios") => {
