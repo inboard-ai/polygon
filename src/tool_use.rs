@@ -592,9 +592,63 @@ fn get_output_schema(module: &str, endpoint: &str) -> Schema {
                 },
             ]
         }
-        ("Tickers", "events") | ("Tickers", "related") | ("Tickers", "types") => {
-            // Generic schema for these endpoints - they return different structures
-            vec![]
+        ("Tickers", "events") => {
+            // Schema for ticker events endpoint
+            vec![
+                ColumnDef {
+                    name: "name".to_string(),
+                    alias: "Company Name".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "composite_figi".to_string(),
+                    alias: "Composite FIGI".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "cik".to_string(),
+                    alias: "CIK".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "events".to_string(),
+                    alias: "Events".to_string(),
+                    dtype: "array".to_string(),
+                },
+            ]
+        }
+        ("Tickers", "related") => {
+            // Schema for related tickers endpoint
+            vec![ColumnDef {
+                name: "ticker".to_string(),
+                alias: "Ticker".to_string(),
+                dtype: "string".to_string(),
+            }]
+        }
+        ("Tickers", "types") => {
+            // Schema for ticker types endpoint
+            vec![
+                ColumnDef {
+                    name: "asset_class".to_string(),
+                    alias: "Asset Class".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "code".to_string(),
+                    alias: "Code".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "description".to_string(),
+                    alias: "Description".to_string(),
+                    dtype: "string".to_string(),
+                },
+                ColumnDef {
+                    name: "locale".to_string(),
+                    alias: "Locale".to_string(),
+                    dtype: "string".to_string(),
+                },
+            ]
         }
         ("Financials", "income_statements")
         | ("Financials", "balance_sheets")
