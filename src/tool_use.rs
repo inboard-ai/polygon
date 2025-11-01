@@ -117,7 +117,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
     vec![
         ToolInfo {
             id: "list_modules".to_string(),
-            name: "list_modules".to_string(),
+            name: "List Modules".to_string(),
             description: "List all API modules (categories of endpoints)".to_string(),
             schema: json!({
                 "type": "object",
@@ -126,7 +126,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             id: "list_endpoints".to_string(),
-            name: "list_endpoints".to_string(),
+            name: "List Sources".to_string(),
             description: "List all endpoints within a module".to_string(),
             schema: json!({
                 "type": "object",
@@ -142,7 +142,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             id: "get_endpoint_schema".to_string(),
-            name: "get_endpoint_schema".to_string(),
+            name: "Explore Endpoint".to_string(),
             description: "Get the parameter schema for a specific endpoint".to_string(),
             schema: json!({
                 "type": "object",
@@ -162,7 +162,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
         },
         ToolInfo {
             id: "call_endpoint".to_string(),
-            name: "call_endpoint".to_string(),
+            name: "Fetch Data".to_string(),
             description: "Call an API endpoint to get actual data".to_string(),
             schema: json!({
                 "type": "object",
