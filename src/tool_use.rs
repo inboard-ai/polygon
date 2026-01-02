@@ -90,22 +90,7 @@ use crate::request::{aggs, financials, tickers};
 
 // Always use emporium-core types
 pub use emporium_core::{ColumnDef, Schema, ToolInfo};
-
-/// Result from executing a tool - can be text or structured data
-#[derive(Debug, Clone)]
-pub enum ToolCallResult {
-    /// Plain text result
-    Text(String),
-    /// Structured tabular data with schema
-    DataFrame {
-        /// The actual JSON data
-        data: Value,
-        /// Column definitions describing the data structure
-        schema: Schema,
-        /// Optional metadata from the API response
-        metadata: Option<Value>,
-    },
-}
+pub use emporium_core::tool::{Label, ToolResult};
 
 /// Get details for a specific tool in emporium protocol format
 pub fn get_tool_details(tool_id: &str) -> Option<ToolInfo> {
@@ -188,18 +173,18 @@ pub fn list_tools() -> Vec<ToolInfo> {
 }
 
 /// Universal tool caller - returns structured results
-pub async fn call_tool<Client: Request>(client: &Polygon<Client>, request: Value) -> Result<ToolCallResult> {
+pub async fn call_tool<Client: Request>(client: &Polygon<Client>, request: Value) -> Result<ToolResult> {
     let tool = request
         .get("tool")
         .and_then(|v| v.as_str())
         .ok_or_else(|| Error::Custom("Missing 'tool' field".to_string()))?;
 
     match tool {
-        "list_tools" => Ok(ToolCallResult::Text(serde_json::to_string(&list_tools())?)),
+        "list_tools" => Ok(ToolResult::text(serde_json::to_string(&list_tools())?)),
         "list_modules" => {
             let result = list_modules()?;
 
-            Ok(ToolCallResult::Text(result.to_string()))
+            Ok(ToolResult::text(result.to_string()))
         }
         "list_endpoints" => {
             let params = request
@@ -207,7 +192,7 @@ pub async fn call_tool<Client: Request>(client: &Polygon<Client>, request: Value
                 .ok_or_else(|| Error::Custom("Missing 'params' field".to_string()))?;
             let result = list_endpoints(params)?;
 
-            Ok(ToolCallResult::Text(result.to_string()))
+            Ok(ToolResult::text(result.to_string()))
         }
         "get_endpoint_schema" => {
             let params = request
@@ -215,7 +200,7 @@ pub async fn call_tool<Client: Request>(client: &Polygon<Client>, request: Value
                 .ok_or_else(|| Error::Custom("Missing 'params' field".to_string()))?;
             let result = get_endpoint_schema(params)?;
 
-            Ok(ToolCallResult::Text(result.to_string()))
+            Ok(ToolResult::text(result.to_string()))
         }
         "call_endpoint" => {
             let params = request
@@ -327,7 +312,7 @@ fn get_endpoint_schema(params: &Value) -> Result<Value> {
 }
 
 /// Call an endpoint with arguments - returns structured DataFrame result
-async fn call_endpoint<Client: Request>(client: &Polygon<Client>, params: &Value) -> Result<ToolCallResult> {
+async fn call_endpoint<Client: Request>(client: &Polygon<Client>, params: &Value) -> Result<ToolResult> {
     let module = params
         .get("module")
         .and_then(|v| v.as_str())
@@ -344,6 +329,9 @@ async fn call_endpoint<Client: Request>(client: &Polygon<Client>, params: &Value
 
     // Build the full endpoint enum from module + endpoint + arguments
     let endpoint_enum = build_endpoint(module, endpoint, arguments)?;
+
+    // Get label from the endpoint
+    let label = endpoint_enum.label();
 
     // Execute the endpoint (returns raw JSON string)
     let json_str = match endpoint_enum {
@@ -372,7 +360,12 @@ async fn call_endpoint<Client: Request>(client: &Polygon<Client>, params: &Value
     // Get schema for this endpoint
     let schema = get_output_schema(module, endpoint);
 
-    Ok(ToolCallResult::DataFrame { data, schema, metadata })
+    // Create result with label
+    let result = ToolResult::columnar(data, schema, metadata);
+    Ok(match label {
+        Some(l) => result.with_label(l),
+        None => result,
+    })
 }
 
 /// Get the output schema for an endpoint

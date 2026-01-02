@@ -3,6 +3,7 @@
 //! This module defines all API endpoints as nested enums where each variant
 //! contains its request parameters. The type system enforces Request → Response correctness.
 
+use emporium_core::tool::Label;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -91,4 +92,53 @@ pub enum Financials {
     /// Get financial ratios
     #[serde(rename = "ratios")]
     Ratios(financials::Params),
+}
+
+impl Endpoint {
+    /// Get the label for this endpoint (typically the ticker symbol)
+    pub fn label(&self) -> Option<Label> {
+        match self {
+            Endpoint::Tickers(t) => t.label(),
+            Endpoint::Aggs(a) => a.label(),
+            Endpoint::Financials(f) => f.label(),
+        }
+    }
+}
+
+impl Tickers {
+    /// Get the label for this ticker endpoint
+    pub fn label(&self) -> Option<Label> {
+        match self {
+            Tickers::All(p) => p.ticker.as_ref().map(Label::new),
+            Tickers::Details(p) => Some(Label::new(&p.ticker)),
+            Tickers::Related(p) => Some(Label::new(&p.ticker)),
+            Tickers::Types => None,
+            Tickers::Events(p) => Some(Label::new(&p.ticker)),
+            Tickers::News(p) => p.ticker.as_ref().map(Label::new),
+        }
+    }
+}
+
+impl Aggs {
+    /// Get the label for this aggregates endpoint
+    pub fn label(&self) -> Option<Label> {
+        match self {
+            Aggs::Aggregates(p) => Some(Label::new(&p.ticker)),
+            Aggs::PreviousClose(p) => Some(Label::new(&p.ticker)),
+            Aggs::GroupedDaily(p) => Some(Label::new(&p.date)),
+            Aggs::DailyOpenClose(p) => Some(Label::new(&p.ticker)),
+        }
+    }
+}
+
+impl Financials {
+    /// Get the label for this financials endpoint
+    pub fn label(&self) -> Option<Label> {
+        match self {
+            Financials::BalanceSheets(p) => p.ticker.as_ref().map(Label::new),
+            Financials::CashFlowStatements(p) => p.ticker.as_ref().map(Label::new),
+            Financials::IncomeStatements(p) => p.ticker.as_ref().map(Label::new),
+            Financials::Ratios(p) => p.ticker.as_ref().map(Label::new),
+        }
+    }
 }
