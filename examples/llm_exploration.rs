@@ -4,7 +4,7 @@
 //! prior knowledge of its structure.
 
 use polygon::Polygon;
-use polygon::tool_use::{self, ToolCallResult};
+use polygon::tool_use::{self, ToolResult};
 use serde_json::json;
 
 #[tokio::main]
@@ -21,8 +21,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }),
     )
     .await?;
-    if let ToolCallResult::Text(text) = tools {
-        println!("Available tools:\n{}\n", text);
+    if let ToolResult::Text(text) = tools {
+        println!("Available tools:\n{}\n", text.content);
     }
 
     // Step 2: What modules exist?
@@ -34,8 +34,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }),
     )
     .await?;
-    if let ToolCallResult::Text(text) = modules {
-        println!("API modules:\n{}\n", text);
+    if let ToolResult::Text(text) = modules {
+        println!("API modules:\n{}\n", text.content);
     }
 
     // Step 3: What endpoints are in the Aggs module?
@@ -47,8 +47,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }),
     )
     .await?;
-    if let ToolCallResult::Text(text) = endpoints {
-        println!("Aggs endpoints:\n{}\n", text);
+    if let ToolResult::Text(text) = endpoints {
+        println!("Aggs endpoints:\n{}\n", text.content);
     }
 
     // Step 4: What parameters does 'aggregates' need?
@@ -63,8 +63,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }),
     )
     .await?;
-    if let ToolCallResult::Text(text) = schema {
-        println!("Aggregates schema:\n{}\n", text);
+    if let ToolResult::Text(text) = schema {
+        println!("Aggregates schema:\n{}\n", text.content);
     }
 
     // Step 5: Call the endpoint with parameters
@@ -87,12 +87,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
     match data {
-        ToolCallResult::DataFrame { data, schema } => {
-            println!("AAPL aggregates:\n{}\n", serde_json::to_string_pretty(&data)?);
-            println!("Schema: {} columns", schema.len());
+        ToolResult::DataFrame(df) => {
+            println!("AAPL aggregates:\n{}\n", serde_json::to_string_pretty(&df.data)?);
+            println!("Schema: {} columns", df.schema.len());
         }
-        ToolCallResult::Text(text) => {
-            println!("AAPL aggregates:\n{}\n", text);
+        ToolResult::Text(text) => {
+            println!("AAPL aggregates:\n{}\n", text.content);
         }
     }
 
