@@ -108,6 +108,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
                 "type": "object",
                 "properties": {}
             }),
+            cacheable: false,
         },
         ToolInfo {
             id: "list_endpoints".to_string(),
@@ -124,6 +125,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
                 },
                 "required": ["module"]
             }),
+            cacheable: false,
         },
         ToolInfo {
             id: "get_endpoint_schema".to_string(),
@@ -144,6 +146,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
                 },
                 "required": ["module", "endpoint"]
             }),
+            cacheable: false,
         },
         ToolInfo {
             id: "call_endpoint".to_string(),
@@ -168,6 +171,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
                 },
                 "required": ["module", "endpoint", "arguments"]
             }),
+            cacheable: true,
         },
     ]
 }
