@@ -89,8 +89,8 @@ use crate::request::Request;
 use crate::request::{aggs, financials, tickers};
 
 // Always use emporium-core types
-pub use emporium_core::{ColumnDef, Schema, ToolInfo};
 pub use emporium_core::tool::{Label, ToolResult};
+pub use emporium_core::{Activity, ColumnDef, Schema, ToolInfo};
 
 /// Get details for a specific tool in emporium protocol format
 pub fn get_tool_details(tool_id: &str) -> Option<ToolInfo> {
@@ -109,6 +109,11 @@ pub fn list_tools() -> Vec<ToolInfo> {
                 "properties": {}
             }),
             cacheable: false,
+            activity: Some(Activity {
+                present: "Listing modules".to_string(),
+                past: "Listed modules".to_string(),
+                subject_field: "".to_string(),
+            }),
         },
         ToolInfo {
             id: "list_endpoints".to_string(),
@@ -126,6 +131,11 @@ pub fn list_tools() -> Vec<ToolInfo> {
                 "required": ["module"]
             }),
             cacheable: false,
+            activity: Some(Activity {
+                present: "Listing endpoints".to_string(),
+                past: "Listed endpoints".to_string(),
+                subject_field: "/module".to_string(),
+            }),
         },
         ToolInfo {
             id: "get_endpoint_schema".to_string(),
@@ -147,6 +157,11 @@ pub fn list_tools() -> Vec<ToolInfo> {
                 "required": ["module", "endpoint"]
             }),
             cacheable: false,
+            activity: Some(Activity {
+                present: "Fetching schema".to_string(),
+                past: "Fetched schema".to_string(),
+                subject_field: "/endpoint".to_string(),
+            }),
         },
         ToolInfo {
             id: "call_endpoint".to_string(),
@@ -172,6 +187,11 @@ pub fn list_tools() -> Vec<ToolInfo> {
                 "required": ["module", "endpoint", "arguments"]
             }),
             cacheable: true,
+            activity: Some(Activity {
+                present: "Calling endpoint".to_string(),
+                past: "Called endpoint".to_string(),
+                subject_field: "/endpoint".to_string(),
+            }),
         },
     ]
 }
